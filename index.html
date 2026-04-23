@@ -814,7 +814,11 @@ function load(){
 function save(){
   try{localStorage.setItem('dpp_v5',JSON.stringify(domains));}catch(e){
     if(e.name==='QuotaExceededError'||e.code===22){
-      toast('⚠️ Storage full! Export a backup now to avoid data loss.','warn');
+      // Emergency trim: keep only last 10 email log entries per domain to free space
+      domains.forEach(function(d){if(d.emailLog&&d.emailLog.length>10)d.emailLog=d.emailLog.slice(-10);});
+      try{localStorage.setItem('dpp_v5',JSON.stringify(domains));
+        toast('⚠️ Storage nearly full — old email log entries trimmed. Export a backup!','warn');
+      }catch(e2){toast('⚠️ Storage full! Export a backup NOW to avoid data loss.','warn');}
     }
   }
   try{localStorage.setItem('dpp_emails',JSON.stringify(emailAccounts));}catch(e){}
@@ -982,7 +986,7 @@ function bulkAddDomains(){
     added++;log.push(`${row.domain} — added`);
   });
   save();renderDash();scheduleAll();
-  try{scheduleAndroidReminders();}catch(e){}
+  try{debouncedScheduleAndroid();}catch(e){}
   document.getElementById('bulk-result').innerHTML=
     `<div class="alert ${added?'al-success':'al-warn'}" style="margin-bottom:8px"><b>${added} added</b>${skipped?`, ${skipped} skipped`:''}</div>`
     +log.map(l=>`<div style="font-size:12px;padding:3px 0;border-bottom:1px solid var(--border);color:var(--text2)">${l}</div>`).join('');
@@ -1148,7 +1152,7 @@ function addDomain(obj){
   };
   domains.unshift(d);save();
   if(!obj)clearForm();
-  toast(`${domain} added`,'success');scheduleAll();try{scheduleAndroidReminders();}catch(e){}
+  toast(`${domain} added`,'success');scheduleAll();try{debouncedScheduleAndroid();}catch(e){}
   if(!obj)autoCalOnAdd(d);  // auto-calendar on manual add only
   return d;
 }
@@ -1545,7 +1549,7 @@ function setSentDate(id,key,ph,phKey,val){
     if(inp&&!inp.value&&d.sent[nk]) inp.value=d.sent[nk];
   });
 
-  save();scheduleAll();try{scheduleAndroidReminders();}catch(e){}
+  save();scheduleAll();try{debouncedScheduleAndroid();}catch(e){}
 }
 function setCheck(id,ph,k,val){
   const d=domains.find(x=>x.id==id);if(!d)return;
@@ -1563,7 +1567,7 @@ function updPrice(id){
   d.listPrice=np;
   if(drop){d.pricedrop={active:true,date:toVal(new Date()),fu1:false,fu2:false,fu3:false};toast(`Price drop logged — FU sequence triggered`,'success');}
   else toast('Price updated','success');
-  save();renderDomains();scheduleAll();try{scheduleAndroidReminders();}catch(e){}
+  save();renderDomains();scheduleAll();try{debouncedScheduleAndroid();}catch(e){}
 }
 function setSold(id,v){const d=domains.find(x=>x.id==id);if(!d)return;d.sold=v;d.status=v?'Sold':'Active';save();}
 function saveSold(id){
@@ -1612,7 +1616,7 @@ function saveLocationModal(id){
   d.locTz=tz;d.locName=name;
   window._clSelTz='';window._clSelName='';
   save();renderDomains();
-  try{scheduleAndroidReminders();}catch(e){}
+  try{debouncedScheduleAndroid();}catch(e){}
   scheduleAll();
   toast('Location updated to '+name,'success');
   const modal=document.getElementById('cl-inp');
@@ -2201,7 +2205,7 @@ function handleFile(file){
       try{save();}catch(ex){}
       try{renderDash();}catch(ex){}
       try{scheduleAll();}catch(ex){}
-      try{scheduleAndroidReminders();}catch(ex){}
+      try{debouncedScheduleAndroid();}catch(ex){}
       var resEl=document.getElementById('import-result');
       if(resEl){
         var statusClass=imp>0?'al-success':'al-warn';
@@ -2246,7 +2250,7 @@ function restoreBackup(file){
         emailAccounts=data.emailAccounts||[];
         interests=data.interests||[];
         save();renderDash();
-        try{scheduleAndroidReminders();}catch(e){}
+        try{debouncedScheduleAndroid();}catch(e){}
         document.getElementById('restore-result').innerHTML=`<div class="alert al-success" style="margin-top:4px">Restored ${domains.length} domains, ${interests.length} interests, ${emailAccounts.length} email accounts.</div>`;
         toast('Backup restored','success');
       };
@@ -2690,7 +2694,7 @@ function getAt6amNigeria(dt){
     return d2;
   }
 }
-function scheduleAndroidReminders(){if(typeof AndroidNotify==='undefined')return;var reminders=[];var idCounter=1000;domains.forEach(function(d){if(d.sold)return;var p1=getP1(d),p2=getP2(d),p3=getP3(d);var tz=d.locTz||'America/New_York';var pairs=[[p1.email,'Phase 1 - Initial email for '+d.domain],[p1.fu1,'Phase 1 - +3d follow-up for '+d.domain],[p1.fu2,'Phase 1 - +5d follow-up for '+d.domain],[p1.fu3,'Phase 1 - +7d follow-up for '+d.domain],[p2.email,'Phase 2 - 6-month email for '+d.domain],[p2.fu1,'Phase 2 - +3d FU for '+d.domain],[p2.fu2,'Phase 2 - +5d FU for '+d.domain],[p2.fu3,'Phase 2 - +7d FU for '+d.domain],[p3.warn30,'WARNING: '+d.domain+' expires in 30 days!'],[p3.warn7,'URGENT: '+d.domain+' expires in 7 days!'],[p3.email,'Phase 3 - pre-expiry email for '+d.domain],[p3.fu1,'Phase 3 - +3d FU for '+d.domain],[p3.fu2,'Phase 3 - +5d FU for '+d.domain],[p3.fu3,'Phase 3 - +7d FU for '+d.domain]];pairs.forEach(function(pair){var dt=pair[0],lbl=pair[1];if(!dt)return;var ms8am=getAt8amTz(dt,tz).getTime();if(!isNaN(ms8am)&&ms8am>Date.now()){reminders.push({id:idCounter++,title:'Domain Portfolio Pro - Reminder',body:lbl,triggerMs:ms8am});}var ms6am=getAt6amNigeria(dt).getTime();if(!isNaN(ms6am)&&ms6am>Date.now()){reminders.push({id:idCounter++,title:'Domain Portfolio Pro - Today',body:'Today: '+lbl,triggerMs:ms6am});}});});interests.forEach(function(it){if(!it.followUp||it.followUpDone)return;var fuDt=pd(it.followUp);if(!fuDt)return;var ms8am=getAt8amTz(fuDt,'America/New_York').getTime();if(!isNaN(ms8am)&&ms8am>Date.now()){reminders.push({id:idCounter++,title:'Domain Portfolio Pro - Reminder',body:'Interest follow-up for '+it.domain+' ('+it.email+')',triggerMs:ms8am});}var ms6am=getAt6amNigeria(fuDt).getTime();if(!isNaN(ms6am)&&ms6am>Date.now()){reminders.push({id:idCounter++,title:'Domain Portfolio Pro - Today',body:'Today: Interest follow-up for '+it.domain,triggerMs:ms6am});}});if(reminders.length>0){AndroidNotify.scheduleReminders(JSON.stringify(reminders));}}
+// scheduleAndroidReminders is defined as window.scheduleAndroidReminders near the bottom of this file
 
 // ── SIDE DRAWER ──
 function openDrawer(){
@@ -3163,7 +3167,7 @@ function toggleDomainRow(rowEl){
   renderDomainsAsList(list);
 }
 
-try{setTimeout(scheduleAndroidReminders,2000);}catch(e){}
+try{setTimeout(function(){debouncedScheduleAndroid();},2000);}catch(e){}
 // ── EDITABLE PROFILE NAME ─────────────────────────────────────────────────────
 function editProfile(){
   const current = localStorage.getItem('dpp_profile_name')||'Domain Investor';
@@ -3252,22 +3256,30 @@ try{(function(){
       'min-height:38px;-webkit-appearance:none;outline:none;box-sizing:border-box;';
     btn.textContent=inp.value?fmtDisplay(inp.value):(inp.getAttribute('placeholder')||'Select date');
     wrap.appendChild(btn);
+    // Set data-dpid so Java's evaluateJavascript snippet can always find the input
+    if(inp.id) inp.setAttribute('data-dpid', inp.id);
     function openPicker(){
       if(typeof AndroidDatePicker!=='undefined'){
-        AndroidDatePicker.open(inp.id||'', inp.value||'');
+        AndroidDatePicker.open(inp.id||inp.getAttribute('data-dpid')||'', inp.value||'');
+      } else {
+        // Fallback for browser testing — restore real date input
+        inp.style.cssText='';
+        inp.type='date';
+        inp.focus();
+        inp.click();
       }
     }
     btn.addEventListener('click', openPicker);
     btn.addEventListener('touchend', function(e){e.preventDefault();openPicker();});
-    // Sync button when value set programmatically
-    var _last=inp.value;
-    setInterval(function(){
-      if(inp.value!==_last){
-        _last=inp.value;
-        btn.textContent=inp.value?fmtDisplay(inp.value):(inp.getAttribute('placeholder')||'Select date');
-        btn.style.color=inp.value?'var(--text)':'var(--text3)';
-      }
-    },300);
+    // Sync button when value changes — use input/change events instead of setInterval to avoid memory leaks
+    inp.addEventListener('change', function(){
+      btn.textContent=inp.value?fmtDisplay(inp.value):(inp.getAttribute('placeholder')||'Select date');
+      btn.style.color=inp.value?'var(--text)':'var(--text3)';
+    });
+    inp.addEventListener('input', function(){
+      btn.textContent=inp.value?fmtDisplay(inp.value):(inp.getAttribute('placeholder')||'Select date');
+      btn.style.color=inp.value?'var(--text)':'var(--text3)';
+    });
   }
   function upgradeAll(){
     document.querySelectorAll('input[type=date]').forEach(upgradeDateInput);
@@ -3287,6 +3299,118 @@ try{(function(){
   }else{upgradeAll();}
   window.fdpUpgradeAll=upgradeAll;
 })();
+
+// ── ANDROID BRIDGE WRAPPERS ──────────────────────────────────────────────────
+// Called by MainActivity.onResume() and after any save that schedules reminders
+window.scheduleAndroidReminders = function() {
+  try {
+    var items = [];
+    var now = Date.now();
+    domains.forEach(function(d) {
+      if (d.sold) return;
+      var tz = d.locTz || 'America/New_York';
+      var p1 = getP1(d), p2 = getP2(d), p3 = getP3(d), pdd = getPD(d);
+      var pairs = [
+        [p1.fu1, d.p1.fu1, 'Phase 1 +3d FU'],
+        [p1.fu2, d.p1.fu2, 'Phase 1 +5d FU'],
+        [p1.fu3, d.p1.fu3, 'Phase 1 +7d FU'],
+        [p2.email, d.p2.email, 'Phase 2 6-month email'],
+        [p2.fu1, d.p2.fu1, 'Phase 2 +3d'],
+        [p2.fu2, d.p2.fu2, 'Phase 2 +5d'],
+        [p2.fu3, d.p2.fu3, 'Phase 2 +7d'],
+        [p3.warn30, false, '30-day expiry warning'],
+        [p3.warn7, false, '7-day expiry warning'],
+        [p3.email, d.p3.email, 'Phase 3 email'],
+        [p3.fu1, d.p3.fu1, 'Phase 3 +3d'],
+        [p3.fu2, d.p3.fu2, 'Phase 3 +5d'],
+        [p3.fu3, d.p3.fu3, 'Phase 3 +7d']
+      ];
+      if (d.pricedrop && d.pricedrop.active && pdd.fu1) {
+        pairs.push([pdd.fu1, d.pricedrop.fu1, 'PD +3d']);
+        pairs.push([pdd.fu2, d.pricedrop.fu2, 'PD +5d']);
+        pairs.push([pdd.fu3, d.pricedrop.fu3, 'PD +7d']);
+      }
+      pairs.forEach(function(pair) {
+        var dt = pair[0], done = pair[1], lbl = pair[2];
+        if (!dt || done) return;
+        try {
+          // Schedule at 8am in the domain's timezone
+          var isoDate = toVal(dt);
+          var am8 = new Date(new Date(isoDate + 'T00:00:00').toLocaleDateString('en-US', {timeZone: tz}) + ' 08:00:00');
+          var triggerMs = am8.getTime();
+          if (triggerMs <= now) return;
+          var idHash = Math.abs((d.domain + lbl + isoDate).split('').reduce(function(a, c) {
+            return (a << 5) - a + c.charCodeAt(0) | 0;
+          }, 0));
+          items.push({
+            id: idHash,
+            title: d.domain + ' \u2014 ' + lbl,
+            body: lbl + ' for ' + d.domain + ' (' + (d.locName || tz) + ')',
+            triggerMs: triggerMs
+          });
+        } catch(e) {}
+      });
+    });
+    // Interest follow-ups
+    interests.forEach(function(it) {
+      if (!it.followUp || it.followUpDone) return;
+      var fuDt = pd(it.followUp); if (!fuDt) return;
+      try {
+        var am8 = new Date(it.followUp + 'T08:00:00');
+        var triggerMs = am8.getTime();
+        if (triggerMs <= now) return;
+        var idHash = Math.abs(('int_' + it.id).split('').reduce(function(a, c) {
+          return (a << 5) - a + c.charCodeAt(0) | 0;
+        }, 0));
+        items.push({
+          id: idHash,
+          title: 'Interest follow-up: ' + it.domain,
+          body: 'Follow-up with ' + it.email + ' for ' + it.domain,
+          triggerMs: triggerMs
+        });
+      } catch(e) {}
+    });
+    if (typeof AndroidNotify !== 'undefined') {
+      AndroidNotify.scheduleReminders(JSON.stringify(items));
+    }
+  } catch(e) { console.error('scheduleAndroidReminders failed:', e); }
+};
+
+// Called by MainActivity.onBackPressed() — return true to suppress exit dialog
+window.onAndroidBack = function() {
+  // 1. Close any open modal overlay
+  var modal = document.querySelector('[style*="position:fixed"][style*="z-index:9"]');
+  if (modal) { modal.remove(); return true; }
+  // 2. Close the side drawer
+  var drawer = document.getElementById('drawer');
+  if (drawer && drawer.classList.contains('open')) { closeDrawer(); return true; }
+  // 3. Close any expanded domain detail panel
+  var openDet = document.querySelector('.det.open');
+  if (openDet) {
+    var id = openDet.id.replace('det-', '');
+    try { toggleDet(id); } catch(e) { openDet.classList.remove('open'); }
+    return true;
+  }
+  // 4. If not on dashboard, go to dashboard
+  if (!document.getElementById('pg-dashboard').classList.contains('on')) {
+    var dashBtn = document.querySelector('.nb');
+    nav('dashboard', dashBtn);
+    return true;
+  }
+  return false; // let Android show the exit dialog
+};
+
+// Named alias so existing call sites using scheduleAndroidReminders() bare name still work
+var scheduleAndroidReminders = window.scheduleAndroidReminders;
+
+// Debounced scheduleAndroidReminders so bulk adds don't spam it
+var _sarTimer = null;
+function debouncedScheduleAndroid() {
+  clearTimeout(_sarTimer);
+  _sarTimer = setTimeout(function() {
+    try { scheduleAndroidReminders(); } catch(e) {}
+  }, 600);
+}
 
 try{load();}catch(e){console.error('load() failed:',e);}
 try{renderDash();}catch(e){console.error('renderDash() failed:',e);}
