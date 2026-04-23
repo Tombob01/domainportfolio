@@ -1,0 +1,3371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Domain Portfolio Pro</title>
+
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#ffffff;--bg2:#f8fafc;--bg3:#f1f5f9;
+--text:#0f172a;--text2:#475569;--text3:#94a3b8;
+--border:#e2e8f0;--border2:#cbd5e1;
+--blue:#2563eb;--blue-dk:#1d4ed8;--blue-lt:#eff6ff;--blue-tx:#1e40af;
+--green:#16a34a;--green-lt:#f0fdf4;--green-tx:#14532d;
+--amber:#d97706;--amber-lt:#fffbeb;--amber-tx:#92400e;
+--red:#dc2626;--red-lt:#fff1f2;--red-tx:#9f1239;
+--teal:#0d9488;--teal-lt:#f0fdfa;--teal-tx:#134e4a;
+--purple:#7c3aed;--purple-lt:#f5f3ff;--purple-tx:#4c1d95;
+--shadow-sm:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
+--shadow:0 4px 6px -1px rgba(15,23,42,.07),0 2px 4px -1px rgba(15,23,42,.04);
+--shadow-md:0 10px 15px -3px rgba(15,23,42,.08),0 4px 6px -2px rgba(15,23,42,.05);
+--r:14px;--rs:9px;--rxs:6px;
+}
+[data-theme="dark"] :root,[data-theme="dark"]{
+--bg:#0d1526;--bg2:#162035;--bg3:#1a2840;
+--text:#f1f5f9;--text2:#94a3b8;--text3:#4a6585;
+--border:#1e2d44;--border2:#2f4268;
+--blue:#3b82f6;--blue-dk:#2563eb;--blue-lt:#172554;--blue-tx:#93c5fd;
+--green-lt:#052e16;--green-tx:#86efac;
+--amber-lt:#2d1a00;--amber-tx:#fcd34d;
+--red-lt:#1f0a0a;--red-tx:#fca5a5;
+--teal-lt:#042f2e;--teal-tx:#5eead4;
+--purple-lt:#1e0a40;--purple-tx:#c4b5fd;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);font-size:14px;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+.app{max-width:900px;margin:0 auto;background:var(--bg);min-height:100vh;box-shadow:var(--shadow-md)}
+
+/* ── HEADER & NAV ── */
+.hdr{background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:60;box-shadow:var(--shadow-sm)}
+.hdr-band{background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 55%,#3b82f6 100%);padding:14px 22px 12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{color:#fff;font-size:17px;font-weight:800;letter-spacing:-.3px;line-height:1}
+.logo span{font-weight:400;opacity:.75}
+.hdr-sub{font-size:11px;color:rgba(255,255,255,.55);margin-top:3px}
+.hdr-chips{display:flex;gap:5px;align-items:center;flex-wrap:wrap;flex-shrink:0}
+.hchip{font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px;border:1.5px solid rgba(255,255,255,.25);color:#fff;background:rgba(255,255,255,.15);display:none;letter-spacing:.01em}
+.hchip.warn{background:rgba(217,119,6,.85)}
+.hchip.danger{background:rgba(220,38,38,.85)}
+.nav{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 18px;gap:2px}
+.nav::-webkit-scrollbar{display:none}
+.nb{padding:11px 15px;background:transparent;border:none;border-bottom:2.5px solid transparent;font-size:13px;color:var(--text3);cursor:pointer;white-space:nowrap;font-family:inherit;font-weight:600;transition:color .15s,border-color .15s,background .15s}
+.nb.on{color:var(--blue);border-bottom-color:var(--blue)}
+.nb:hover:not(.on){color:var(--text2);background:var(--bg2);border-radius:6px 6px 0 0}
+
+/* ── PAGES ── */
+.pg{display:none;padding:22px}.pg.on{display:block}
+
+/* ── PAGE HEADER ── */
+.page-header{margin-bottom:20px}
+.page-header h1{font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.3px}
+.page-header p{font-size:13px;color:var(--text3);margin-top:4px}
+
+/* ── CARDS ── */
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+.card-blue{border-top:3px solid var(--blue);padding-top:17px}
+.card-teal{border-top:3px solid var(--teal);padding-top:17px}
+.infobox{background:var(--blue-lt);border:1px solid #bfdbfe;border-radius:var(--rs);padding:12px 16px;font-size:12px;color:var(--blue-tx);line-height:1.7;margin-bottom:16px}
+
+/* ── METRICS ── */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:22px}
+.metric{background:var(--bg);border-radius:var(--r);padding:16px 18px;border:1px solid var(--border);position:relative;overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .15s,box-shadow .15s,border-color .15s}
+.metric:hover{border-color:var(--border2);box-shadow:var(--shadow);transform:translateY(-2px)}
+.metric:active{transform:translateY(0)}
+.metric.active-filter{box-shadow:0 0 0 2.5px var(--blue);border-color:var(--blue)}
+.metric-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:12px}
+.metric.m-blue .metric-icon{background:var(--blue-lt)}
+.metric.m-green .metric-icon{background:var(--green-lt)}
+.metric.m-amber .metric-icon{background:var(--amber-lt)}
+.metric.m-red .metric-icon{background:var(--red-lt)}
+.metric.m-purple .metric-icon{background:var(--purple-lt)}
+.metric.m-teal .metric-icon{background:var(--teal-lt)}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0}
+.metric.m-blue::before{background:var(--blue)}.metric.m-green::before{background:var(--green)}
+.metric.m-amber::before{background:var(--amber)}.metric.m-red::before{background:var(--red)}
+.metric.m-purple::before{background:var(--purple)}.metric.m-teal::before{background:var(--teal)}
+.ml{font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.mv{font-size:26px;font-weight:800;line-height:1;letter-spacing:-.5px}
+.ms{font-size:11px;color:var(--text3);margin-top:5px;line-height:1.4}
+
+/* ── INSIGHTS ── */
+.insights-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;margin-bottom:18px;box-shadow:var(--shadow-sm)}
+.insights-title{font-size:10.5px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.insights-grid{display:flex;flex-wrap:wrap;gap:10px}
+.insight-item{flex:1;min-width:120px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:11px 13px;box-shadow:var(--shadow-sm)}
+.insight-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.insight-val{font-size:20px;font-weight:800;line-height:1;letter-spacing:-.3px}
+.insight-sub{font-size:11px;color:var(--text3);margin-top:4px;line-height:1.4}
+
+/* ── FORMS ── */
+label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px;margin-top:14px;font-weight:600;letter-spacing:.01em}
+input[type=text],input[type=number],input[type=date],input[type=email],select,textarea{width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--blue);flex-shrink:0}
+/* Date picker: flat, fast, no spinner chrome — consistent on Android WebView */
+input[type=date]{
+  -webkit-appearance:none;
+  appearance:none;
+  min-height:38px;
+  cursor:pointer;
+  letter-spacing:.01em;
+}
+input[type=date]::-webkit-calendar-picker-indicator{
+  opacity:.5;cursor:pointer;padding:0;margin-left:4px;
+  filter:var(--date-icon-filter,none);
+}
+[data-theme="dark"] input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) opacity(.5);}
+input[type=date]::-webkit-inner-spin-button{display:none}
+input[type=date]::-webkit-clear-button{display:none}
+
+/* ── NATIVE ANDROID DATE PICKER BRIDGE ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* ── BUTTONS ── */
+.btn{padding:9px 18px;border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s;box-shadow:var(--shadow-sm)}
+.btn:hover{background:var(--bg2);box-shadow:var(--shadow)}
+.btn:active{transform:translateY(1px);box-shadow:none}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 1px 3px rgba(37,99,235,.3)}
+.btn-primary:hover{background:var(--blue-dk);border-color:var(--blue-dk);box-shadow:0 4px 8px rgba(37,99,235,.35)}
+.btn-sm{padding:6px 13px;font-size:12px}
+.btn-ghost{border:none;color:var(--blue);background:none;font-size:12px;font-weight:600;padding:3px 6px;cursor:pointer;font-family:inherit;border-radius:var(--rxs);transition:background .15s}
+.btn-ghost:hover{background:var(--blue-lt)}
+.btn-danger{color:var(--red);border:1px solid transparent;background:none;padding:4px 8px;border-radius:var(--rxs);cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:background .15s}
+.btn-danger:hover{background:var(--red-lt)}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;letter-spacing:.01em}
+.b-blue{background:var(--blue-lt);color:var(--blue-tx);border:1px solid #bfdbfe}
+.b-amber{background:var(--amber-lt);color:var(--amber-tx);border:1px solid #fde68a}
+.b-red{background:var(--red-lt);color:var(--red-tx);border:1px solid #fecaca}
+.b-green{background:var(--green-lt);color:var(--green-tx);border:1px solid #bbf7d0}
+.b-gray{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
+.b-teal{background:var(--teal-lt);color:var(--teal-tx);border:1px solid #99f6e4}
+.b-purple{background:var(--purple-lt);color:var(--purple-tx);border:1px solid #ddd6fe}
+
+/* ── DOMAIN CARDS ── */
+.dcard{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:17px 20px;margin-bottom:10px;transition:border-color .2s,box-shadow .2s,transform .15s;box-shadow:var(--shadow-sm)}
+.dcard:hover{border-color:var(--border2);box-shadow:var(--shadow);transform:translateY(-1px)}
+.dcard.sold{border-left:4px solid var(--teal)}
+.dcard.expired{border-left:4px solid var(--red);background:var(--red-lt)}
+.dcard.expiring{border-left:4px solid var(--red)}
+.dcard.expiring-soon{border-left:4px solid var(--amber)}
+.dn{font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.2px}
+.dm{font-size:12px;color:var(--text3);margin-top:5px;line-height:1.7}
+.loc-tag{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;padding:2px 8px;border-radius:20px;background:var(--blue-lt);color:var(--blue-tx);margin-left:7px;font-weight:700;border:1px solid #bfdbfe}
+
+/* ── TIMELINE ── */
+.tl{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.tl-row{display:flex;align-items:flex-start;gap:10px}
+.tl-lbl{font-size:10px;font-weight:800;color:var(--text3);width:80px;flex-shrink:0;padding-top:5px;text-transform:uppercase;letter-spacing:.06em}
+.tl-steps{display:flex;flex-wrap:wrap;gap:5px;flex:1}
+.step{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);transition:all .15s}
+.step.done{background:var(--green-lt);border-color:#bbf7d0;color:var(--green-tx)}
+.step.due{background:var(--amber-lt);border-color:#fde68a;color:var(--amber-tx);font-weight:700;animation:pulse 2s infinite}
+.step.overdue{background:var(--red-lt);border-color:#fecaca;color:var(--red-tx);font-weight:700}
+.step.upcoming{background:var(--bg2);color:var(--text3);border-color:var(--border)}
+.step.alert{background:var(--amber-lt);border-color:#fde68a;color:var(--amber-tx)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.d-done{background:var(--green)}.d-due{background:var(--amber)}.d-ov{background:var(--red)}.d-up{background:var(--border2)}
+
+/* ── DETAIL PANEL ── */
+.det{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.det.open{display:block}
+.det-back{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.det-tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:14px;background:var(--bg2);border-radius:var(--rs) var(--rs) 0 0;padding:4px 4px 0}
+.dtab{padding:7px 13px;background:transparent;border:none;border-bottom:2px solid transparent;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;font-family:inherit;border-radius:var(--rxs) var(--rxs) 0 0;transition:all .15s}
+.dtab:hover:not(.on){background:var(--bg);color:var(--text2)}
+.dtab.on{color:var(--blue);border-bottom-color:var(--blue);background:var(--bg);font-weight:700}
+.dtab-pane{display:none}.dtab-pane.on{display:block}
+.date-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.date-row:last-child{border:none}
+.date-row label{margin:0;min-width:135px;flex-shrink:0;font-size:12px}
+.date-row input[type=date]{flex:1;min-width:110px;font-size:12px;padding:6px 9px;-webkit-appearance:none;appearance:none;min-height:34px}
+.date-row input[type=checkbox]{margin-left:auto}
+.ph-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;gap:8px}
+.ph-row:last-child{border:none}
+
+/* ── EMAIL LOG ── */
+.email-log-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.email-log-row:last-child{border:none}
+.email-addr{font-size:12px;font-weight:700;color:var(--blue-tx);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.email-count{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;background:var(--blue-lt);color:var(--blue-tx);border:1px solid #bfdbfe}
+.el-count-wrap input[type=number]{width:80px;padding:5px 8px;font-size:12px;text-align:center}
+
+/* ── ALERTS ── */
+.alert{border-radius:var(--rs);padding:11px 15px;font-size:13px;margin-bottom:8px;line-height:1.55;border-left:4px solid transparent}
+.al-warn{background:var(--amber-lt);border-left-color:var(--amber);color:var(--amber-tx);border-top:1px solid #fde68a;border-right:1px solid #fde68a;border-bottom:1px solid #fde68a}
+.al-danger{background:var(--red-lt);border-left-color:var(--red);color:var(--red-tx);border-top:1px solid #fecaca;border-right:1px solid #fecaca;border-bottom:1px solid #fecaca}
+.al-info{background:var(--blue-lt);border-left-color:var(--blue);color:var(--blue-tx);border-top:1px solid #bfdbfe;border-right:1px solid #bfdbfe;border-bottom:1px solid #bfdbfe}
+.al-success{background:var(--green-lt);border-left-color:var(--green);color:var(--green-tx);border-top:1px solid #bbf7d0;border-right:1px solid #bbf7d0;border-bottom:1px solid #bbf7d0}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(8px);padding:11px 22px;border-radius:var(--r);font-size:13px;font-weight:600;z-index:9999;display:none;max-width:90vw;text-align:center;color:#fff;box-shadow:0 8px 32px rgba(0,0,0,.22);opacity:0;transition:opacity .2s,transform .2s}
+.toast.show{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── DROP ZONE ── */
+.drop-zone{border:2px dashed var(--border2);border-radius:var(--r);padding:3rem 1rem;text-align:center;cursor:pointer;color:var(--text3);transition:background .15s,border-color .15s}
+.drop-zone:hover{background:var(--blue-lt);border-color:var(--blue)}
+
+/* ── SECTION HEADERS ── */
+.sect{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.09em;margin:18px 0 10px;display:flex;align-items:center;gap:10px}
+.sect::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── SEARCH / FILTER TOOLBAR ── */
+.search-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;box-shadow:var(--shadow-sm)}
+.search-row input,.search-row select{flex:1;min-width:110px;background:var(--bg)}
+
+/* ── MISC ── */
+.empty{text-align:center;padding:3rem 1rem;color:var(--text3);font-size:13px}
+.empty::before{content:'—';display:block;font-size:28px;margin-bottom:10px;opacity:.3}
+code{font-family:'SFMono-Regular',Consolas,monospace;background:var(--bg2);padding:2px 7px;border-radius:5px;font-size:11px;border:1px solid var(--border)}
+
+/* ── LOCATION DROPDOWN ── */
+.loc-wrap{position:relative}
+.loc-dd{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg);border:1.5px solid var(--blue);border-radius:var(--rs);z-index:200;max-height:240px;overflow-y:auto;display:none;box-shadow:var(--shadow-md)}
+.loc-dd.open{display:block}
+.loc-opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);transition:background .1s}
+.loc-opt:last-child{border:none}
+.loc-opt:hover{background:var(--blue-lt);color:var(--blue-tx)}
+.loc-opt .tz{font-size:11px;color:var(--text3);margin-left:6px}
+
+/* ── EXPIRED SECTION ── */
+.expired-banner{background:var(--red-lt);border:1px solid #fecaca;border-left:4px solid var(--red);border-radius:var(--rs);padding:11px 15px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.expired-banner .en{font-weight:800;color:var(--red-tx);font-size:13px}
+.expired-banner .ed{font-size:12px;color:var(--red-tx);margin-top:2px;opacity:.85}
+
+/* ── INTEREST TRACKING ── */
+.interest-row{display:flex;align-items:flex-start;gap:10px;padding:10px 13px;border-bottom:1px solid var(--border);flex-wrap:wrap;background:var(--bg);transition:background .1s}
+.interest-row:nth-child(even){background:var(--bg2)}
+.interest-row:last-child{border:none}
+.interest-row:hover{background:var(--blue-lt)}
+.interest-domain{font-size:12px;font-weight:800;color:var(--blue-tx)}
+.interest-email{font-size:11px;color:var(--text2);margin-top:2px}
+.interest-note{font-size:11px;color:var(--text3);font-style:italic;margin-top:3px;line-height:1.5}
+.interest-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:5px}
+.b-orange{background:#fff7ed;color:#9a3412;border:1px solid #fdba74}
+.interest-fu-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--purple-lt);color:var(--purple-tx);border:1px solid #ddd6fe}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .g2,.g3{grid-template-columns:1fr}
+  .tl-lbl{width:62px}
+  .metrics{grid-template-columns:repeat(3,1fr);gap:8px}
+  .mv{font-size:20px}
+  .pg{padding:14px}
+}
+
+/* ── SIDE DRAWER ── */
+.drawer-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s}
+.drawer-overlay.open{opacity:1;pointer-events:all}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:285px;background:var(--bg);z-index:201;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);overflow-y:auto;box-shadow:4px 0 24px rgba(0,0,0,.18);display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer-profile{background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 55%,#3b82f6 100%);padding:28px 20px 20px;flex-shrink:0}
+.drawer-avatar{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;margin-bottom:12px;border:2px solid rgba(255,255,255,.4)}
+.drawer-name{font-size:16px;font-weight:800;color:#fff;letter-spacing:-.2px}
+.drawer-role{font-size:12px;color:rgba(255,255,255,.65);margin-top:3px}
+.drawer-body{flex:1;padding:10px 0 20px}
+.drawer-section{margin-bottom:4px}
+.drawer-section-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 6px;font-size:10.5px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;cursor:pointer;user-select:none;border-radius:var(--rs);transition:background .15s}
+.drawer-section-hdr:hover{background:var(--bg2)}
+.drawer-section-hdr .arr{font-size:10px;transition:transform .2s;color:var(--text3)}
+.drawer-section-hdr.collapsed .arr{transform:rotate(-90deg)}
+.drawer-section-items{overflow:hidden;transition:max-height .25s ease}
+.drawer-item{display:flex;align-items:center;gap:13px;padding:10px 20px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;border-radius:0;transition:background .15s,color .15s;border:none;background:none;width:100%;text-align:left;font-family:inherit}
+.drawer-item:hover{background:var(--bg2);color:var(--text)}
+.drawer-item.active{background:var(--blue-lt);color:var(--blue)}
+.drawer-item-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.drawer-item-badge{margin-left:auto;background:var(--blue);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;min-width:20px;text-align:center}
+.drawer-item-badge.warn{background:var(--amber)}
+.drawer-item-badge.danger{background:var(--red)}
+.drawer-divider{height:1px;background:var(--border);margin:8px 16px}
+.drawer-cat-item{display:flex;align-items:center;justify-content:space-between;padding:8px 20px 8px 48px;font-size:12px;color:var(--text2);cursor:pointer;transition:background .15s}
+.drawer-cat-item:hover{background:var(--bg2)}
+.drawer-cat-name{font-weight:600}
+.drawer-cat-count{font-size:11px;color:var(--text3);background:var(--bg3);padding:1px 8px;border-radius:20px;font-weight:700}
+.drawer-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;font-size:13px;font-weight:600;color:var(--text2)}
+.toggle-sw{width:40px;height:22px;border-radius:11px;background:var(--border2);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.toggle-sw.on{background:var(--blue)}
+.toggle-sw::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-sw.on::after{transform:translateX(18px)}
+.hamburger{background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:6px;color:#fff;font-size:20px;line-height:1;transition:background .15s;flex-shrink:0}
+.hamburger:hover{background:rgba(255,255,255,.15)}
+
+/* ── COMPACT LIST VIEW ── */
+.dlist-container{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+.dlist-row{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--bg);border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;position:relative;user-select:none}
+.dlist-row:last-of-type{border-bottom:none}
+.dlist-row:hover{background:var(--bg2)}
+.dlist-row.expanded{background:var(--blue-lt);border-bottom:1px solid var(--blue)}
+.dlist-left{display:flex;flex-direction:column;flex:1;min-width:0}
+.dlist-name{font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dlist-meta{font-size:11px;color:var(--text3);margin-top:3px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.dlist-right{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.dlist-detail{display:none;background:var(--bg);border-bottom:2px solid var(--blue)}
+.dlist-detail.open{display:block}
+
+/* ── EDITABLE MENU ── */
+.drawer-item-edit{display:none;margin-left:auto;gap:4px;align-items:center;flex-shrink:0}
+.drawer-item:hover .drawer-item-edit{display:flex}
+.menu-edit-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:2px 4px;border-radius:4px;line-height:1;transition:background .15s;color:var(--text3)}
+.menu-edit-btn:hover{background:var(--bg3);color:var(--text)}
+.menu-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px}
+.menu-modal-box{background:var(--bg);border-radius:var(--r);padding:24px;width:100%;max-width:340px;box-shadow:var(--shadow-md)}
+.menu-modal-box h3{font-size:15px;font-weight:800;margin-bottom:16px;color:var(--text)}
+</style>
+</head>
+<body>
+<div id="ptr-bar" style="position:fixed;top:0;left:0;right:0;height:0;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;font-size:13px;font-weight:700;text-align:center;line-height:1;display:flex;align-items:center;justify-content:center;transition:height .2s;z-index:9999;overflow:hidden"></div>
+<div class="app">
+
+<!-- SIDE DRAWER OVERLAY -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+
+<!-- SIDE DRAWER -->
+<div class="drawer" id="drawer">
+  <!-- Profile -->
+  <div class="drawer-profile" style="position:relative">
+    <div class="drawer-avatar" id="drawer-avatar">DI</div>
+    <div class="drawer-name" id="drawer-name">Domain Investor</div>
+    <div class="drawer-role">Portfolio Manager</div>
+    <button onclick="editProfile()" title="Edit name" style="position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:13px;color:#fff;display:flex;align-items:center;justify-content:center;padding:0">&#9999;&#65039;</button>
+  </div>
+
+  <div class="drawer-body">
+
+    <!-- Quick Actions (dynamic/editable) -->
+    <div class="drawer-section">
+      <div class="drawer-section-hdr" onclick="toggleSection('qa')">
+        Quick Actions <span class="arr">▾</span>
+      </div>
+      <div class="drawer-section-items" id="sec-qa">
+        <div id="drawer-menu-items"></div>
+        <button class="drawer-item" onclick="addMenuItemPrompt()" style="color:var(--blue);font-size:12px;padding:8px 20px">
+          <div class="drawer-item-icon" style="font-size:13px">＋</div> Add Menu Item
+        </button>
+      </div>
+    </div>
+
+    <div class="drawer-divider"></div>
+
+    <!-- Categories -->
+    <div class="drawer-section">
+      <div class="drawer-section-hdr" onclick="toggleSection('cats')">
+        Categories <span class="arr">▾</span>
+      </div>
+      <div class="drawer-section-items" id="sec-cats">
+        <div id="drawer-cats-list"></div>
+      </div>
+    </div>
+
+    <div class="drawer-divider"></div>
+
+    <!-- Settings -->
+    <div class="drawer-section">
+      <div class="drawer-section-hdr" onclick="toggleSection('settings')">
+        Settings <span class="arr">▾</span>
+      </div>
+      <div class="drawer-section-items" id="sec-settings">
+        <div class="drawer-toggle">
+          <span>🌙 Dark Mode</span>
+          <div class="toggle-sw" id="theme-toggle" onclick="toggleTheme()"></div>
+        </div>
+        <button class="drawer-item" onclick="drawerNav('reminders')">
+          <div class="drawer-item-icon">🔔</div> Notification Settings
+        </button>
+        <button class="drawer-item" onclick="showTzPicker()">
+          <div class="drawer-item-icon">🌍</div> Default Timezone
+          <span style="margin-left:auto;font-size:11px;color:var(--text3)" id="dr-tz">Nigeria</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="drawer-divider"></div>
+
+    <!-- Data -->
+    <div class="drawer-section">
+      <div class="drawer-section-hdr" onclick="toggleSection('data')">
+        Data <span class="arr">▾</span>
+      </div>
+      <div class="drawer-section-items" id="sec-data">
+        <button class="drawer-item" onclick="exportBackup();closeDrawer()">
+          <div class="drawer-item-icon">⬇️</div> Export Backup
+        </button>
+        <label for="restore-inp" class="drawer-item" style="cursor:pointer" onclick="closeDrawer()">
+          <div class="drawer-item-icon">⬆️</div> Restore Backup
+        </label>
+        <button class="drawer-item" onclick="exportCSV();closeDrawer()">
+          <div class="drawer-item-icon">📤</div> Export CSV
+        </button>
+      </div>
+    </div>
+
+    <div class="drawer-divider"></div>
+
+    <!-- About -->
+    <div class="drawer-section">
+      <div class="drawer-section-hdr" onclick="toggleSection('about')">
+        About <span class="arr">▾</span>
+      </div>
+      <div class="drawer-section-items" id="sec-about">
+        <button class="drawer-item" onclick="alert('Domain Portfolio Pro\nVersion 1.0\nBuilt for serious domain investors.')">
+          <div class="drawer-item-icon">ℹ️</div> App Version 1.0
+        </button>
+      </div>
+    </div>
+
+    <div class="drawer-divider"></div>
+    <button class="drawer-item" onclick="exitApp()" style="color:var(--red);font-weight:700">
+      <div class="drawer-item-icon" style="font-size:16px">🚪</div> Exit App
+    </button>
+
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-band">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="hamburger" onclick="openDrawer()" title="Menu">☰</button>
+      <div>
+        <div class="logo">Domain<span>Portfolio</span> Pro</div>
+        <div class="hdr-sub">Outreach · Follow-ups · Expiry tracking</div>
+      </div>
+    </div>
+    <div class="hdr-chips">
+      <div id="chip-due" class="hchip warn" style="display:none">0 due today</div>
+      <div id="chip-int" class="hchip warn" style="display:none">0 interest FU</div>
+      <div id="chip-exp" class="hchip danger" style="display:none">0 expired</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nb on" onclick="nav('dashboard',this)">Dashboard</button>
+    <button class="nb" onclick="nav('add',this)">+ Add Domain</button>
+    <button class="nb" onclick="nav('domains',this)">My Domains</button>
+    <button class="nb" onclick="nav('import',this)">Bulk Import</button>
+    <button class="nb" onclick="nav('reminders',this)">Reminders</button>
+    <button class="nb" onclick="nav('interests',this)">Interests</button>
+    <button class="nb" onclick="nav('emails',this)">Email Accounts</button>
+  </nav>
+</div>
+
+<div id="pg-dashboard" class="pg on">
+  <div class="page-header">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <h1 id="dash-greeting" style="flex:1;min-width:0"></h1>
+    </div>
+    <p>Here's what's happening with your portfolio today.</p>
+  </div>
+  <div class="metrics" id="metrics"></div>
+  <div id="insights-wrap"></div>
+  <div id="expired-section"></div>
+  <div id="alerts-wrap"></div>
+  <div class="sect">Due today</div>
+  <div id="due-today"></div>
+  <div class="sect">Recent domains</div>
+  <div id="recent-list"></div>
+</div>
+
+<!-- ADD DOMAIN -->
+<div id="pg-add" class="pg">
+  <div class="page-header">
+    <h1>Add Domain</h1>
+    <p>Register a new domain and set up your outreach timeline</p>
+  </div>
+  <div class="card card-blue">
+    <div style="font-size:16px;font-weight:800;margin-bottom:4px">Add new domain</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Fields marked <span style="color:var(--red)">*</span> are required</div>
+
+    <label>Domain name <span style="color:var(--red)">*</span></label>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="f-domain" placeholder="e.g. mybrand.com" style="flex:1" oninput="clearLookup()">
+      <button class="btn btn-primary" onclick="doLookup()" style="white-space:nowrap;flex-shrink:0">Look up</button>
+    </div>
+    <div id="lookup-st" style="font-size:12px;min-height:16px;margin-top:5px"></div>
+
+    <div class="g2">
+      <div><label>Registrar</label><input type="text" id="f-reg" placeholder="e.g. GoDaddy"></div>
+      <div><label>Marketplace</label>
+        <select id="f-market"><option value="">Not listed</option><option>Afternic</option><option>GoDaddy</option><option>Sedo</option><option>Dan.com</option><option>Flippa</option><option>Spaceship</option><option>Daaz.com</option><option>Atom.com</option><option>Other</option></select>
+      </div>
+    </div>
+
+    <label>US State / City (for timezone reminders) <span style="color:var(--red)">*</span></label>
+    <div class="loc-wrap">
+      <input type="text" id="f-loc-search" placeholder="Type state or city…" autocomplete="off" oninput="filterLocs()" onfocus="openLocDD()" onblur="setTimeout(closeLocDD,200)">
+      <input type="hidden" id="f-loc-tz" value="">
+      <input type="hidden" id="f-loc-name" value="">
+      <div class="loc-dd" id="loc-dd"></div>
+    </div>
+    <div id="loc-selected" style="font-size:12px;min-height:16px;margin-top:4px;color:var(--green)"></div>
+
+    <div class="g2">
+      <div>
+        <label>Registration date <span style="color:var(--red)">*</span></label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="date" id="f-regdate" style="flex:1" onchange="autoSetExpiry()" oninput="autoSetExpiry()">
+          <button type="button" class="btn-ghost" style="font-size:11px;padding:4px 8px;flex-shrink:0;color:var(--text3)" onclick="document.getElementById('f-regdate').value=''" title="Clear">✕</button>
+        </div>
+      </div>
+      <div>
+        <label>Expiry date</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="date" id="f-expiry" style="flex:1">
+          <button type="button" class="btn-ghost" style="font-size:11px;padding:4px 8px;flex-shrink:0;color:var(--text3)" onclick="document.getElementById('f-expiry').value=''" title="Clear">✕</button>
+        </div>
+      </div>
+    </div>
+    <div class="g2">
+      <div><label>Category</label>
+        <select id="f-cat"><option value="">Select…</option><option>Tech</option><option>Branding</option><option>eCommerce</option><option>Premium</option><option>Finance</option><option>Health</option><option>Real Estate</option><option>Geo</option><option>Other</option></select>
+      </div>
+      <div><label>Listed price ($)</label><input type="number" id="f-price" placeholder="0" min="0"></div>
+    </div>
+    <div class="g2">
+      <div><label>Document name</label><input type="text" id="f-doc" placeholder="contract.pdf"></div>
+      <div><label>Notes</label><input type="text" id="f-notes" placeholder="Any notes…"></div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="addDomain()">Save domain</button>
+      <button class="btn" onclick="clearForm()">Clear</button>
+    </div>
+  </div>
+  <div class="card" style="border-top:3px solid var(--teal);padding-top:17px">
+    <div style="font-size:16px;font-weight:800;margin-bottom:4px">Bulk add domains</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Paste multiple domains — one per line or comma-separated. Each domain gets its own editable row.</div>
+    <label>Domains <span style="color:var(--red)">*</span></label>
+    <textarea id="bulk-domains" rows="5" placeholder="example.com&#10;test.io, sample.net&#10;mybrand.co" style="width:100%;resize:vertical"></textarea>
+    <div id="bulk-parse-preview" style="font-size:11px;color:var(--text3);margin-top:4px;min-height:14px"></div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="parseBulkIntoRows()">Parse domains &#x2192;</button>
+      <button class="btn" onclick="clearBulkForm()">Clear</button>
+    </div>
+    <div id="bulk-rows-wrap" style="display:none;margin-top:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Fill in details for each domain</div>
+      <div id="bulk-rows"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="bulkAddDomains()">Add All Domains</button>
+        <button class="btn" onclick="clearBulkForm()">Cancel</button>
+      </div>
+    </div>
+    <div id="bulk-result" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card" style="background:var(--bg2);border-style:dashed">
+    <div style="font-size:13px;font-weight:800;color:var(--blue);margin-bottom:8px">3-Phase Email Timeline</div>
+    <div style="font-size:12px;color:var(--text2);line-height:2.1">
+      <div><b style="color:var(--text)">Phase 1</b> — After registration: Email → +3d FU → +5d FU → +7d FU</div>
+      <div><b style="color:var(--text)">Phase 2</b> — At 6 months: 10-day alert → Email → +3d → +5d → +7d</div>
+      <div><b style="color:var(--text)">Phase 3</b> — 30 days before expiry: Email → +3d → +5d → +7d</div>
+      <div><b style="color:var(--text)">You set dates</b> — enter actual send dates and all follow-ups recalculate from them</div>
+    </div>
+  </div>
+</div>
+
+<!-- MY DOMAINS -->
+<div id="pg-domains" class="pg">
+  <div class="page-header">
+    <h1>My Domains</h1>
+    <p>Manage your portfolio, track outreach, and follow-up timelines</p>
+  </div>
+  <div id="domains-back-bar" style="display:none;margin-bottom:14px">
+    <button class="btn btn-sm" onclick="closeAllDets()" style="display:inline-flex;align-items:center;gap:6px;font-weight:700">
+      ← Back to list
+    </button>
+    <span id="domains-back-label" style="font-size:12px;color:var(--text3);margin-left:10px"></span>
+  </div>
+  <div class="search-row">
+    <input type="text" id="s-q" placeholder="Search domains…" oninput="renderDomains()">
+    <select id="s-status" onchange="renderDomains()">
+      <option value="">All statuses</option><option>Active</option><option>Pending Reply</option><option>No Response</option><option>Sold</option><option>Not Contacted</option><option>Expired</option>
+    </select>
+    <select id="s-phase" onchange="renderDomains()">
+      <option value="">All phases</option><option value="1">Phase 1</option><option value="2">Phase 2</option><option value="3">Phase 3</option>
+    </select>
+    <select id="s-interest" onchange="renderDomains()">
+      <option value="">Any interest</option><option value="yes">Has interest</option><option value="no">No interest</option>
+    </select>
+    <select id="s-overdue" onchange="renderDomains()">
+      <option value="">Any FU status</option><option value="overdue">Overdue FU</option>
+    </select>
+    <select id="s-cat" onchange="renderDomains()">
+      <option value="">All categories</option><option>Tech</option><option>Branding</option><option>eCommerce</option><option>Premium</option><option>Finance</option><option>Health</option><option>Real Estate</option><option>Geo</option><option>Other</option>
+    </select>
+    <button class="btn btn-sm" onclick="exportCSV()">Export CSV</button>
+  </div>
+  <div id="domain-list"></div>
+</div>
+
+<!-- IMPORT -->
+<div id="pg-import" class="pg">
+  <div class="page-header">
+    <h1>Bulk Import</h1>
+    <p>Import domains from CSV, manage backups, and export data</p>
+  </div>
+  <div class="card">
+    <div style="font-size:15px;font-weight:800;margin-bottom:8px">Bulk import domains</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">Required columns: <code>domain</code>, <code>registration_date</code>. Optional: <code>registrar, location, expiry_date, category, marketplace, price, notes</code></div>
+
+    <input type="file" id="file-inp" accept=".csv,.txt,.tsv,text/plain,text/csv,text/tab-separated-values,application/octet-stream,*/*" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;z-index:-1">
+
+    <label for="file-inp" class="drop-zone" style="width:100%;text-align:center;cursor:pointer;background:none;border:2px dashed var(--border2);padding:3rem 1rem;border-radius:var(--r);display:block;-webkit-tap-highlight-color:rgba(37,99,235,0.12)">
+      <div style="font-size:32px;color:var(--border2);margin-bottom:10px">&#8679;</div>
+      <div style="font-weight:800;font-size:15px">Tap to upload or drag &amp; drop</div>
+      <div style="font-size:12px;margin-top:6px;color:var(--text3)" id="file-chosen-name">CSV · TXT · TSV · All files supported</div>
+    </label>
+
+    <button id="file-process-btn" class="btn btn-primary" style="width:100%;margin-top:10px;padding:13px;font-size:15px;font-weight:700;display:none" onclick="var f=document.getElementById('file-inp');if(f&&f.files&&f.files[0]){handleFile(f.files[0]);}else{toast('Please select a CSV file first','warn');}">
+      &#8679; Import selected file
+    </button>
+    <div id="import-result" style="margin-top:14px"></div>
+  </div>
+  <div class="card">
+    <div style="font-weight:700;margin-bottom:8px;font-size:13px">Template</div>
+    <code style="display:block;padding:12px;border-radius:var(--rs);background:var(--bg2);font-size:11px;line-height:2;word-break:break-all">domain,registrar,location,registration_date,expiry_date,category,marketplace,price,notes<br>mybrand.com,GoDaddy,California,2024-01-15,2025-01-15,Tech,Afternic,2500,</code>
+    <button class="btn btn-sm" style="margin-top:10px" onclick="dlTemplate()">Download template</button>
+  </div>
+  <div class="card card-teal">
+    <div style="font-size:15px;font-weight:800;margin-bottom:6px">Backup &amp; Restore</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">Export a full JSON backup of all your data — domains, email logs, interests, and email accounts. Restore from a previous backup at any time.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" onclick="exportBackup()">⬇ Export full backup (.json)</button>
+      <label for="restore-inp" class="btn btn-sm" style="cursor:pointer;display:inline-flex;align-items:center">⬆ Restore from backup</label>
+    </div>
+    <input type="file" id="restore-inp" accept=".json" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;z-index:-1" onchange="restoreBackup(this.files[0])">
+    <div id="restore-result" style="margin-top:10px"></div>
+  </div>
+  <div class="card">
+    <div style="font-size:15px;font-weight:800;margin-bottom:6px">Export interests</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:10px">Download all logged buyer interests as CSV.</div>
+    <button class="btn btn-sm" onclick="exportInterestsCSV()">Export interests CSV</button>
+  </div>
+</div>
+
+<!-- REMINDERS -->
+<div id="pg-reminders" class="pg">
+  <div class="page-header">
+    <h1>Reminders</h1>
+    <p>Track overdue, due today, and upcoming follow-up schedule</p>
+  </div>
+  <div class="card card-blue">
+    <div style="font-size:15px;font-weight:800;margin-bottom:6px">Browser notifications</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">Alerts fire at <b>8am in the domain's US timezone</b> on every follow-up day, expiry warning, and price drop.</div>
+    <button class="btn btn-primary" onclick="reqNotif()" id="notif-btn">Enable notifications</button>
+    <div id="notif-st" style="font-size:12px;color:var(--text2);margin-top:8px"></div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--text3);line-height:1.7">
+      <b style="color:var(--text2)">Kiwi Browser:</b> ⋮ → Settings → Site settings → Notifications → Allow for this site → Enable above.
+    </div>
+  </div>
+  <div class="sect" style="justify-content:space-between">
+    <span>Full upcoming schedule</span>
+    <button class="btn btn-sm" onclick="downloadAllICS()" style="font-size:11px;display:flex;align-items:center;gap:5px">📅 Add All to Calendar</button>
+  </div>
+  <div id="rem-overdue-banner"></div>
+  <div id="rem-overdue-list"></div>
+  <div id="rem-today-wrap" style="display:none"><div class="sect">Due today</div><div id="rem-today-list"></div></div>
+  <div id="rem-upcoming-wrap" style="display:none"><div class="sect">Upcoming</div><div id="rem-upcoming-list"></div></div>
+  <div id="rem-list"></div>
+</div>
+
+<!-- INTERESTS -->
+<div id="pg-interests" class="pg">
+  <div class="page-header">
+    <h1>Interest Tracker</h1>
+    <p>Log buyer interest and track follow-ups for every lead</p>
+  </div>
+  <div class="card card-blue">
+    <div style="font-size:15px;font-weight:800;margin-bottom:6px">Interest Tracker</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">Log when a potential buyer shows interest in one of your domains. Set follow-up reminders to stay on top of every lead.</div>
+    <div class="sect" style="margin-top:0">Log new interest</div>
+    <div class="g2">
+      <div>
+        <label>Domain <span style="color:var(--red)">*</span></label>
+        <select id="int-domain-sel" style="width:100%"><option value="">— select domain —</option></select>
+      </div>
+      <div>
+        <label>Email that received interest <span style="color:var(--red)">*</span></label>
+        <select id="int-email-sel" style="width:100%"><option value="">— select email —</option></select>
+      </div>
+    </div>
+    <label>Notes</label>
+    <textarea id="int-notes" rows="2" placeholder="e.g. Buyer asked about price, seemed serious…" style="width:100%;resize:vertical"></textarea>
+    <div class="g2">
+      <div>
+        <label>Date of interest</label>
+        <input type="date" id="int-date" onchange="(function(el){var fu=document.getElementById('int-fu-date');if(fu&&!fu.dataset.manuallySet&&el.value){var d=new Date(el.value+'T12:00:00');d.setDate(d.getDate()+3);fu.value=toVal(d);}}).call(null,this)" oninput="(function(el){var fu=document.getElementById('int-fu-date');if(fu&&!fu.dataset.manuallySet&&el.value){var d=new Date(el.value+'T12:00:00');d.setDate(d.getDate()+3);fu.value=toVal(d);}}).call(null,this)">
+      </div>
+      <div>
+        <label>Follow-up date (optional)</label>
+        <input type="date" id="int-fu-date" oninput="this.dataset.manuallySet='1'" onchange="this.dataset.manuallySet='1'">
+      </div>
+    </div>
+    <button class="btn btn-primary" style="margin-top:12px" onclick="addInterest()">Log interest</button>
+  </div>
+  <div class="sect">All interest logs</div>
+  <div id="interest-filter-row" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+    <input type="text" id="int-search" placeholder="Search domain or email…" style="flex:1;min-width:120px" oninput="renderInterests()">
+    <select id="int-fu-filter" onchange="renderInterests()" style="min-width:140px">
+      <option value="">All</option>
+      <option value="pending">Follow-up pending</option>
+      <option value="overdue">Follow-up overdue</option>
+      <option value="done">Follow-up done</option>
+      <option value="none">No follow-up set</option>
+    </select>
+  </div>
+  <div id="interest-list"></div>
+</div>
+
+<!-- EMAIL ACCOUNTS -->
+<div id="pg-emails" class="pg">
+  <div class="page-header">
+    <h1>Email Accounts</h1>
+    <p>Manage outreach email accounts and track send counts</p>
+  </div>
+  <div class="card card-teal">
+    <div style="font-size:15px;font-weight:800;margin-bottom:6px">Your outreach email accounts</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Select which email to use per domain and track how many emails were sent from each account.</div>
+    <div class="sect" style="margin-top:0">Add new email address</div>
+    <div style="display:flex;gap:8px">
+      <input type="email" id="new-email-inp" placeholder="newaddress@gmail.com" style="flex:1">
+      <button class="btn btn-primary btn-sm" onclick="addEmailAccount()">Add</button>
+    </div>
+    <div class="sect">All email accounts</div>
+    <div id="email-accounts-list"></div>
+  </div>
+  <div class="card">
+    <div style="font-size:13px;font-weight:800;margin-bottom:8px">Email usage across all domains</div>
+    <div id="email-usage-list"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ── US LOCATIONS ──────────────────────────────────────────────────────────────
+const US_LOCS=[
+  {n:'Alabama',tz:'America/Chicago'},{n:'Alaska',tz:'America/Anchorage'},
+  {n:'Arizona',tz:'America/Phoenix'},{n:'Arkansas',tz:'America/Chicago'},
+  {n:'California',tz:'America/Los_Angeles'},{n:'Colorado',tz:'America/Denver'},
+  {n:'Connecticut',tz:'America/New_York'},{n:'Delaware',tz:'America/New_York'},
+  {n:'Florida',tz:'America/New_York'},{n:'Georgia',tz:'America/New_York'},
+  {n:'Hawaii',tz:'Pacific/Honolulu'},{n:'Idaho',tz:'America/Boise'},
+  {n:'Illinois',tz:'America/Chicago'},{n:'Indiana',tz:'America/Indiana/Indianapolis'},
+  {n:'Iowa',tz:'America/Chicago'},{n:'Kansas',tz:'America/Chicago'},
+  {n:'Kentucky',tz:'America/New_York'},{n:'Louisiana',tz:'America/Chicago'},
+  {n:'Maine',tz:'America/New_York'},{n:'Maryland',tz:'America/New_York'},
+  {n:'Massachusetts',tz:'America/New_York'},{n:'Michigan',tz:'America/Detroit'},
+  {n:'Minnesota',tz:'America/Chicago'},{n:'Mississippi',tz:'America/Chicago'},
+  {n:'Missouri',tz:'America/Chicago'},{n:'Montana',tz:'America/Denver'},
+  {n:'Nebraska',tz:'America/Chicago'},{n:'Nevada',tz:'America/Los_Angeles'},
+  {n:'New Hampshire',tz:'America/New_York'},{n:'New Jersey',tz:'America/New_York'},
+  {n:'New Mexico',tz:'America/Denver'},{n:'New York',tz:'America/New_York'},
+  {n:'North Carolina',tz:'America/New_York'},{n:'North Dakota',tz:'America/Chicago'},
+  {n:'Ohio',tz:'America/New_York'},{n:'Oklahoma',tz:'America/Chicago'},
+  {n:'Oregon',tz:'America/Los_Angeles'},{n:'Pennsylvania',tz:'America/New_York'},
+  {n:'Rhode Island',tz:'America/New_York'},{n:'South Carolina',tz:'America/New_York'},
+  {n:'South Dakota',tz:'America/Chicago'},{n:'Tennessee',tz:'America/Chicago'},
+  {n:'Texas',tz:'America/Chicago'},{n:'Utah',tz:'America/Denver'},
+  {n:'Vermont',tz:'America/New_York'},{n:'Virginia',tz:'America/New_York'},
+  {n:'Washington',tz:'America/Los_Angeles'},{n:'West Virginia',tz:'America/New_York'},
+  {n:'Wisconsin',tz:'America/Chicago'},{n:'Wyoming',tz:'America/Denver'},
+  {n:'Washington DC',tz:'America/New_York'},
+  // Major cities
+  {n:'New York City, NY',tz:'America/New_York'},{n:'Los Angeles, CA',tz:'America/Los_Angeles'},
+  {n:'Chicago, IL',tz:'America/Chicago'},{n:'Houston, TX',tz:'America/Chicago'},
+  {n:'Phoenix, AZ',tz:'America/Phoenix'},{n:'Philadelphia, PA',tz:'America/New_York'},
+  {n:'San Antonio, TX',tz:'America/Chicago'},{n:'San Diego, CA',tz:'America/Los_Angeles'},
+  {n:'Dallas, TX',tz:'America/Chicago'},{n:'San Jose, CA',tz:'America/Los_Angeles'},
+  {n:'Austin, TX',tz:'America/Chicago'},{n:'Jacksonville, FL',tz:'America/New_York'},
+  {n:'Fort Worth, TX',tz:'America/Chicago'},{n:'Columbus, OH',tz:'America/New_York'},
+  {n:'Charlotte, NC',tz:'America/New_York'},{n:'Indianapolis, IN',tz:'America/Indiana/Indianapolis'},
+  {n:'San Francisco, CA',tz:'America/Los_Angeles'},{n:'Seattle, WA',tz:'America/Los_Angeles'},
+  {n:'Denver, CO',tz:'America/Denver'},{n:'Nashville, TN',tz:'America/Chicago'},
+  {n:'Oklahoma City, OK',tz:'America/Chicago'},{n:'El Paso, TX',tz:'America/Denver'},
+  {n:'Boston, MA',tz:'America/New_York'},{n:'Miami, FL',tz:'America/New_York'},
+  {n:'Atlanta, GA',tz:'America/New_York'},{n:'Las Vegas, NV',tz:'America/Los_Angeles'},
+  {n:'Portland, OR',tz:'America/Los_Angeles'},{n:'Memphis, TN',tz:'America/Chicago'},
+  {n:'Detroit, MI',tz:'America/Detroit'},{n:'Baltimore, MD',tz:'America/New_York'},
+  {n:'Milwaukee, WI',tz:'America/Chicago'},{n:'Albuquerque, NM',tz:'America/Denver'},
+  {n:'Tucson, AZ',tz:'America/Phoenix'},{n:'Fresno, CA',tz:'America/Los_Angeles'},
+  {n:'Sacramento, CA',tz:'America/Los_Angeles'},{n:'Mesa, AZ',tz:'America/Phoenix'},
+  {n:'Kansas City, MO',tz:'America/Chicago'},{n:'Omaha, NE',tz:'America/Chicago'},
+  {n:'Raleigh, NC',tz:'America/New_York'},{n:'Minneapolis, MN',tz:'America/Chicago'},
+  {n:'Cleveland, OH',tz:'America/New_York'},{n:'New Orleans, LA',tz:'America/Chicago'},
+  {n:'Tampa, FL',tz:'America/New_York'},{n:'Orlando, FL',tz:'America/New_York'},
+  {n:'Pittsburgh, PA',tz:'America/New_York'},{n:'Salt Lake City, UT',tz:'America/Denver'},
+  {n:'Cincinnati, OH',tz:'America/New_York'},{n:'Honolulu, HI',tz:'Pacific/Honolulu'},
+  {n:'Anchorage, AK',tz:'America/Anchorage'},
+];
+
+const DEFAULT_EMAILS=[];
+
+let domains=[], emailAccounts=[], interests=[];
+
+function load(){
+  try{domains=JSON.parse(localStorage.getItem('dpp_v5')||'[]')}catch(e){domains=[];}
+  try{
+    emailAccounts=JSON.parse(localStorage.getItem('dpp_emails')||'null');
+    if(!emailAccounts) emailAccounts=DEFAULT_EMAILS.map(e=>({email:e,count:0}));
+  }catch(e){emailAccounts=DEFAULT_EMAILS.map(e=>({email:e,count:0}));}
+  try{interests=JSON.parse(localStorage.getItem('dpp_interests')||'[]')}catch(e){interests=[];}
+}
+function save(){
+  try{localStorage.setItem('dpp_v5',JSON.stringify(domains));}catch(e){
+    if(e.name==='QuotaExceededError'||e.code===22){
+      toast('⚠️ Storage full! Export a backup now to avoid data loss.','warn');
+    }
+  }
+  try{localStorage.setItem('dpp_emails',JSON.stringify(emailAccounts));}catch(e){}
+  try{localStorage.setItem('dpp_interests',JSON.stringify(interests));}catch(e){}
+}
+
+// ── DATE HELPERS ──────────────────────────────────────────────────────────────
+function pd(s){if(!s)return null;const[y,m,d]=s.split('-').map(Number);if(!y||!m||!d)return null;return new Date(y,m-1,d);}
+function today(){const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate());}
+function addD(dt,n){if(!dt)return null;const r=new Date(dt);r.setDate(r.getDate()+n);return r;}
+function addM(dt,n){if(!dt)return null;const r=new Date(dt);r.setMonth(r.getMonth()+n);return r;}
+function daysUntil(dt){if(!dt)return null;return Math.round((dt-today())/86400000);}
+function isToday(dt){if(!dt)return false;const t=today();return dt.getFullYear()===t.getFullYear()&&dt.getMonth()===t.getMonth()&&dt.getDate()===t.getDate();}
+function isPast(dt){return dt&&dt<today();}
+function fmt(dt){if(!dt)return'—';return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function toVal(dt){if(!dt)return'';const y=dt.getFullYear(),m=String(dt.getMonth()+1).padStart(2,'0'),d=String(dt.getDate()).padStart(2,'0');return`${y}-${m}-${d}`;}
+
+// ── LOCATION DROPDOWN ─────────────────────────────────────────────────────────
+let locFiltered=US_LOCS;
+function filterLocs(){
+  const q=document.getElementById('f-loc-search').value.toLowerCase();
+  locFiltered=US_LOCS.filter(l=>l.n.toLowerCase().includes(q));
+  renderLocDD();openLocDD();
+}
+function renderLocDD(){
+  const dd=document.getElementById('loc-dd');
+  dd.innerHTML=locFiltered.slice(0,50).map(l=>`<div class="loc-opt" onmousedown="selectLoc('${l.n.replace(/'/g,"\\'")}','${l.tz}')">${l.n}<span class="tz">${l.tz.replace('America/','').replace(/_/g,' ')}</span></div>`).join('');
+}
+function openLocDD(){const dd=document.getElementById('loc-dd');renderLocDD();dd.classList.add('open');}
+function closeLocDD(){document.getElementById('loc-dd').classList.remove('open');}
+function selectLoc(name,tz){
+  document.getElementById('f-loc-tz').value=tz;
+  document.getElementById('f-loc-name').value=name;
+  document.getElementById('f-loc-search').value=name;
+  document.getElementById('loc-selected').textContent=`✓ ${name} · ${tz.replace('America/','').replace(/_/g,' ')} time`;
+  closeLocDD();
+}
+
+// ── BULK ADD — PER-ROW ────────────────────────────────────────────────────────
+// bulkRowData stores {domain, tz, locName} for each parsed row (loc picked via dropdown)
+let bulkRowData=[];
+
+function parseBulkRaw(){
+  const raw=document.getElementById('bulk-domains').value||'';
+  return raw.split(/[\n,]+/).map(s=>s.trim().toLowerCase().replace(/^https?:\/\//,'').split('/')[0]).filter(s=>s.length>0&&s.includes('.'));
+}
+
+function parseBulkIntoRows(){
+  const list=parseBulkRaw();
+  if(!list.length){toast('Paste at least one domain','warn');return;}
+  // Deduplicate within paste
+  const seen=new Set(); const unique=[];
+  list.forEach(d=>{if(!seen.has(d)){seen.add(d);unique.push(d);}});
+  const dupes=list.length-unique.length;
+  const alreadyExist=unique.filter(d=>domains.find(x=>x.domain===d));
+  const fresh=unique.filter(d=>!domains.find(x=>x.domain===d));
+
+  const prev=document.getElementById('bulk-parse-preview');
+  prev.textContent=`${unique.length} detected${dupes?` · ${dupes} duplicate in paste removed`:''}${alreadyExist.length?` · ${alreadyExist.length} already in system (skipped)`:''}`;
+
+  if(!fresh.length){toast('All pasted domains already exist','warn');return;}
+
+  // Build per-row state
+  bulkRowData=fresh.map(domain=>({domain,tz:'',locName:''}));
+  renderBulkRows();
+  document.getElementById('bulk-rows-wrap').style.display='block';
+  document.getElementById('bulk-result').innerHTML='';
+  document.getElementById('bulk-rows-wrap').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderBulkRows(){
+  const CAT_OPTS=['','Tech','Branding','eCommerce','Premium','Finance','Health','Real Estate','Geo','Other'].map(c=>`<option value="${c}">${c||'Category…'}</option>`).join('');
+  document.getElementById('bulk-rows').innerHTML=bulkRowData.map((row,i)=>`
+    <div id="bulk-row-${i}" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:13px;font-weight:800;color:var(--text)">${row.domain}</span>
+        <button class="btn-danger" style="font-size:11px;padding:2px 8px" onclick="removeBulkRow(${i})">✕ Remove</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;flex-wrap:wrap">
+        <div>
+          <label style="margin-top:0">Reg date <span style="color:var(--red)">*</span></label>
+          <input type="date" id="br-reg-${i}" onchange="autoSetBulkExpiry(${i})" oninput="autoSetBulkExpiry(${i})" style="width:100%;padding:7px 10px;font-size:12px;border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg);color:var(--text)">
+        </div>
+        <div>
+          <label style="margin-top:0">Expiry date</label>
+          <input type="date" id="br-exp-${i}" oninput="this.dataset.manuallySet='1'" onchange="this.dataset.manuallySet='1'" style="width:100%;padding:7px 10px;font-size:12px;border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg);color:var(--text)">
+        </div>
+        <div>
+          <label style="margin-top:0">Location <span style="color:var(--red)">*</span></label>
+          <div class="loc-wrap">
+            <input type="text" id="br-loc-${i}" placeholder="Type state or city…" autocomplete="off"
+              oninput="filterRowLoc(${i})" onfocus="openRowLocDD(${i})" onblur="setTimeout(()=>closeRowLocDD(${i}),200)"
+              style="width:100%;padding:7px 10px;font-size:12px;border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg);color:var(--text)">
+            <div class="loc-dd" id="br-loc-dd-${i}"></div>
+          </div>
+          <div id="br-loc-ok-${i}" style="font-size:11px;color:var(--green);margin-top:3px;min-height:14px">${row.locName?'✓ '+row.locName:''}</div>
+        </div>
+        <div>
+          <label style="margin-top:0">Registrar</label>
+          <input type="text" id="br-registrar-${i}" placeholder="e.g. GoDaddy" style="width:100%;padding:7px 10px;font-size:12px;border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg);color:var(--text)">
+        </div>
+        <div>
+          <label style="margin-top:0">Category</label>
+          <select id="br-cat-${i}" style="width:100%;padding:7px 10px;font-size:12px;border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg);color:var(--text)">${CAT_OPTS}</select>
+        </div>
+        <div>
+          <label style="margin-top:0">Listed price ($)</label>
+          <input type="number" id="br-price-${i}" placeholder="0" min="0" style="width:100%;padding:7px 10px;font-size:12px;border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg);color:var(--text)">
+        </div>
+      </div>
+    </div>`).join('');
+  try{if(window.fdpUpgradeAll)window.fdpUpgradeAll();}catch(e){}
+}
+
+function removeBulkRow(i){
+  bulkRowData.splice(i,1);
+  if(!bulkRowData.length){document.getElementById('bulk-rows-wrap').style.display='none';return;}
+  renderBulkRows();
+}
+
+// Per-row location dropdown
+function filterRowLoc(i){
+  const q=document.getElementById(`br-loc-${i}`).value.toLowerCase();
+  const filtered=US_LOCS.filter(l=>l.n.toLowerCase().includes(q));
+  const dd=document.getElementById(`br-loc-dd-${i}`);
+  dd.innerHTML=filtered.slice(0,50).map(l=>`<div class="loc-opt" onmousedown="selectRowLoc(${i},'${l.n.replace(/'/g,"\\'")}','${l.tz}')">${l.n}<span class="tz">${l.tz.replace('America/','').replace(/_/g,' ')}</span></div>`).join('');
+  dd.classList.add('open');
+}
+function openRowLocDD(i){filterRowLoc(i);}
+function closeRowLocDD(i){const dd=document.getElementById(`br-loc-dd-${i}`);if(dd)dd.classList.remove('open');}
+function selectRowLoc(i,name,tz){
+  bulkRowData[i].tz=tz;bulkRowData[i].locName=name;
+  document.getElementById(`br-loc-${i}`).value=name;
+  document.getElementById(`br-loc-ok-${i}`).textContent=`✓ ${name}`;
+  closeRowLocDD(i);
+}
+
+function bulkAddDomains(){
+  if(!bulkRowData.length){toast('No domains to add','warn');return;}
+  let added=0,skipped=0;const log=[];
+  bulkRowData.forEach((row,i)=>{
+    const regDate=document.getElementById(`br-reg-${i}`).value;
+    const tz=row.tz;const locName=row.locName;
+    if(!regDate){skipped++;log.push(`${row.domain} — skipped: reg date missing`);return;}
+    if(!tz){skipped++;log.push(`${row.domain} — skipped: location missing`);return;}
+    if(domains.find(x=>x.domain===row.domain)){skipped++;log.push(`${row.domain} — already exists`);return;}
+    const expiry=document.getElementById(`br-exp-${i}`).value;
+    const registrar=document.getElementById(`br-registrar-${i}`).value.trim();
+    const category=document.getElementById(`br-cat-${i}`).value;
+    const price=parseFloat(document.getElementById(`br-price-${i}`).value)||0;
+    const d={
+      id:String(Date.now())+String(Math.floor(Math.random()*1000000))+i,
+      domain:row.domain,registrar,locTz:tz,locName,regDate,expiry,
+      category,marketplace:'',listPrice:price,
+      priceHistory:price?[{price,date:toVal(new Date()),note:'Listed'}]:[],
+      sent:{p1email:'',p1fu1:'',p1fu2:'',p1fu3:'',p2email:'',p2fu1:'',p2fu2:'',p2fu3:'',p3email:'',p3fu1:'',p3fu2:'',p3fu3:'',pdfu1:'',pdfu2:'',pdfu3:''},
+      p1:{email:false,fu1:false,fu2:false,fu3:false},
+      p2:{email:false,fu1:false,fu2:false,fu3:false},
+      p3:{email:false,fu1:false,fu2:false,fu3:false},
+      pricedrop:{active:false,date:null,fu1:false,fu2:false,fu3:false},
+      emailLog:[],status:'Not Contacted',sold:false,soldDate:'',soldPrice:0,
+      docName:'',notes:'',addedAt:toVal(new Date())
+    };
+    domains.unshift(d);
+    added++;log.push(`${row.domain} — added`);
+  });
+  save();renderDash();scheduleAll();
+  try{scheduleAndroidReminders();}catch(e){}
+  document.getElementById('bulk-result').innerHTML=
+    `<div class="alert ${added?'al-success':'al-warn'}" style="margin-bottom:8px"><b>${added} added</b>${skipped?`, ${skipped} skipped`:''}</div>`
+    +log.map(l=>`<div style="font-size:12px;padding:3px 0;border-bottom:1px solid var(--border);color:var(--text2)">${l}</div>`).join('');
+  if(added){
+    bulkRowData=[];
+    document.getElementById('bulk-rows-wrap').style.display='none';
+    document.getElementById('bulk-domains').value='';
+    document.getElementById('bulk-parse-preview').textContent='';
+  }
+  toast(`${added} domain${added!==1?'s':''} added`,'success');
+}
+
+function clearBulkForm(){
+  document.getElementById('bulk-domains').value='';
+  document.getElementById('bulk-parse-preview').textContent='';
+  document.getElementById('bulk-rows-wrap').style.display='none';
+  document.getElementById('bulk-result').innerHTML='';
+  bulkRowData=[];
+}
+
+// ── LOOKUP (RDAP — ICANN, CORS-open, no API key) ──────────────────────────────
+function clearLookup(){document.getElementById('lookup-st').textContent='';}
+function doLookup(){
+  const raw=document.getElementById('f-domain').value.trim().toLowerCase().replace(/^https?:\/\//,'').split('/')[0];
+  if(!raw){toast('Enter a domain name','warn');return;}
+  const st=document.getElementById('lookup-st');
+  st.innerHTML='<span style="color:var(--text3)">⏳ Looking up domain data…</span>';
+
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),8000);
+
+  fetch(`https://rdap.org/domain/${encodeURIComponent(raw)}`,{signal:controller.signal})
+    .then(r=>{
+      clearTimeout(timeout);
+      // 404 = domain not found in RDAP (unregistered or unsupported TLD)
+      if(r.status===404) throw new Error('not_found');
+      if(!r.ok) throw new Error('http_'+r.status);
+      return r.json();
+    })
+    .then(data=>{
+      const msgs=[];
+
+      // Registrar — RDAP stores it in entities with role "registrar"
+      let registrar='';
+      if(data.entities&&Array.isArray(data.entities)){
+        const reg=data.entities.find(e=>e.roles&&e.roles.includes('registrar'));
+        if(reg){
+          // vCard array: [[name,{},text,value], ...]
+          const vcard=reg.vcardArray&&reg.vcardArray[1];
+          if(vcard){
+            const fn=vcard.find(v=>v[0]==='fn');
+            if(fn) registrar=fn[3]||'';
+          }
+          // fallback: publicIds
+          if(!registrar&&reg.publicIds) registrar=reg.publicIds[0]&&reg.publicIds[0].identifier||'';
+        }
+      }
+      if(registrar&&!document.getElementById('f-reg').value){
+        document.getElementById('f-reg').value=registrar;
+        msgs.push(`Registrar: <b>${registrar}</b>`);
+      }
+
+      // Dates — RDAP uses events array with eventAction keys
+      if(data.events&&Array.isArray(data.events)){
+        data.events.forEach(ev=>{
+          const action=(ev.eventAction||'').toLowerCase();
+          const dt=ev.eventDate?new Date(ev.eventDate):null;
+          if(!dt||isNaN(dt))return;
+          if(action==='registration'&&!document.getElementById('f-regdate').value){
+            document.getElementById('f-regdate').value=toVal(dt);
+            msgs.push(`Registered: <b>${fmt(dt)}</b>`);
+          }
+          if(action==='expiration'&&!document.getElementById('f-expiry').value){
+            document.getElementById('f-expiry').value=toVal(dt);
+            msgs.push(`Expires: <b>${fmt(dt)}</b>`);
+          }
+        });
+      }
+
+      if(msgs.length){
+        st.innerHTML=`<span style="color:var(--green)">✓ ${msgs.join(' · ')} — review and adjust if needed.</span>`;
+      } else {
+        _lookupFallback(st,'RDAP returned no usable data for this domain');
+      }
+    })
+    .catch(err=>{
+      clearTimeout(timeout);
+      if(err.message==='not_found'){
+        _lookupFallback(st,'Domain not found in RDAP — may be unregistered or unsupported TLD');
+      } else if(err.name==='AbortError'){
+        _lookupFallback(st,'Lookup timed out');
+      } else {
+        _lookupFallback(st,'Lookup failed — check your connection');
+      }
+    });
+}
+
+function _lookupFallback(st,reason){
+  const now=new Date();
+  if(!document.getElementById('f-regdate').value) document.getElementById('f-regdate').value=toVal(now);
+  if(!document.getElementById('f-expiry').value) document.getElementById('f-expiry').value=toVal(new Date(now.getFullYear()+1,now.getMonth(),now.getDate()));
+  st.innerHTML=`<span style="color:var(--amber)">⚠ ${reason} — dates pre-filled as today / +1 year. Correct with ✕ buttons if needed.</span>`;
+}
+
+// ── CLEAR FORM ────────────────────────────────────────────────────────────────
+function clearForm(){
+  ['f-domain','f-reg','f-loc-search','f-regdate','f-expiry','f-price','f-doc','f-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-loc-tz').value='';document.getElementById('f-loc-name').value='';
+  document.getElementById('f-cat').value='';document.getElementById('f-market').value='';
+  document.getElementById('lookup-st').textContent='';document.getElementById('loc-selected').textContent='';
+}
+
+// ── TIMELINE CALC ─────────────────────────────────────────────────────────────
+function getP1(d){
+  const base=pd(d.regDate);if(!base)return{};
+  const e=pd(d.sent.p1email)||base,f1=pd(d.sent.p1fu1)||addD(e,3),f2=pd(d.sent.p1fu2)||addD(f1,5),f3=pd(d.sent.p1fu3)||addD(f2,7);
+  return{email:e,fu1:f1,fu2:f2,fu3:f3};
+}
+function getP2(d){
+  const base=addM(pd(d.regDate),6);if(!base)return{};
+  const warn=addD(base,-10),e=pd(d.sent.p2email)||base,f1=pd(d.sent.p2fu1)||addD(e,3),f2=pd(d.sent.p2fu2)||addD(f1,5),f3=pd(d.sent.p2fu3)||addD(f2,7);
+  return{warn,email:e,fu1:f1,fu2:f2,fu3:f3};
+}
+function getP3(d){
+  const expDt=pd(d.expiry);if(!expDt)return{};
+  const w30=addD(expDt,-30),w7=addD(expDt,-7),e=pd(d.sent.p3email)||w30,f1=pd(d.sent.p3fu1)||addD(e,3),f2=pd(d.sent.p3fu2)||addD(f1,5),f3=pd(d.sent.p3fu3)||addD(f2,7);
+  return{warn30:w30,warn7:w7,email:e,fu1:f1,fu2:f2,fu3:f3};
+}
+function getPD(d){
+  if(!d.pricedrop||!d.pricedrop.active||!d.pricedrop.date)return{};
+  const base=pd(d.pricedrop.date),f1=pd(d.sent.pdfu1)||addD(base,3),f2=pd(d.sent.pdfu2)||addD(f1,5),f3=pd(d.sent.pdfu3)||addD(f2,7);
+  return{fu1:f1,fu2:f2,fu3:f3};
+}
+
+// ── ADD DOMAIN ────────────────────────────────────────────────────────────────
+function addDomain(obj){
+  const domain=(obj&&obj.domain)||document.getElementById('f-domain').value.trim();
+  if(!domain){toast('Domain name required','warn');return null;}
+  const regDate=(obj&&obj.regDate)||document.getElementById('f-regdate').value;
+  if(!regDate){toast('Registration date required','warn');return null;}
+  const locTz=(obj&&obj.tz)||document.getElementById('f-loc-tz').value;
+  const locName=(obj&&obj.locName)||document.getElementById('f-loc-name').value;
+  if(!locTz&&!obj){toast('Please select a US state or city','warn');return null;}
+  const price=parseFloat((obj&&obj.price)||document.getElementById('f-price').value)||0;
+  const d={
+    id:String(Date.now())+String(Math.floor(Math.random()*1000000)),domain,
+    registrar:(obj&&obj.registrar)||document.getElementById('f-reg').value||'',
+    locTz:locTz||'America/New_York',locName:locName||'New York',
+    regDate,expiry:(obj&&obj.expiry)||document.getElementById('f-expiry').value||'',
+    category:(obj&&obj.category)||document.getElementById('f-cat').value||'',
+    marketplace:(obj&&obj.marketplace)||document.getElementById('f-market').value||'',
+    listPrice:price,priceHistory:price?[{price,date:toVal(new Date()),note:'Listed'}]:[],
+    sent:{p1email:'',p1fu1:'',p1fu2:'',p1fu3:'',p2email:'',p2fu1:'',p2fu2:'',p2fu3:'',p3email:'',p3fu1:'',p3fu2:'',p3fu3:'',pdfu1:'',pdfu2:'',pdfu3:''},
+    p1:{email:false,fu1:false,fu2:false,fu3:false},
+    p2:{email:false,fu1:false,fu2:false,fu3:false},
+    p3:{email:false,fu1:false,fu2:false,fu3:false},
+    pricedrop:{active:false,date:null,fu1:false,fu2:false,fu3:false},
+    emailLog:[],// [{email, count, phase, note}]
+    status:'Not Contacted',sold:false,soldDate:'',soldPrice:0,
+    docName:(obj&&obj.docName)||document.getElementById('f-doc').value||'',
+    notes:(obj&&obj.notes)||document.getElementById('f-notes').value||'',
+    addedAt:toVal(new Date())
+  };
+  domains.unshift(d);save();
+  if(!obj)clearForm();
+  toast(`${domain} added`,'success');scheduleAll();try{scheduleAndroidReminders();}catch(e){}
+  if(!obj)autoCalOnAdd(d);  // auto-calendar on manual add only
+  return d;
+}
+
+// ── BADGE / STEP ──────────────────────────────────────────────────────────────
+function sBadge(s){const m={Active:'b-blue','Pending Reply':'b-amber','No Response':'b-red','Sold':'b-teal','Not Contacted':'b-gray',Expired:'b-red'};return`<span class="badge ${m[s]||'b-gray'}">${s}</span>`;}
+function stepCls(done,dt){if(done)return'done';if(!dt)return'upcoming';if(isToday(dt))return'due';if(isPast(dt))return'overdue';return'upcoming';}
+function dotCls(done,dt){if(done)return'd-done';if(!dt)return'd-up';if(isToday(dt))return'd-due';if(isPast(dt))return'd-ov';return'd-up';}
+function stepH(lbl,done,dt){const s=stepCls(done,dt),dc=dotCls(done,dt);return`<span class="step ${s}"><span class="dot ${dc}"></span>${lbl}${dt?' · '+fmt(dt):''}</span>`;}
+
+// ── RENDER CARD ───────────────────────────────────────────────────────────────
+function renderCard(d){
+  const p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
+  const expDt=pd(d.expiry),expDays=daysUntil(expDt);
+  const isExpired=expDays!==null&&expDays<0&&!d.sold;
+  const cls=d.sold?'sold':isExpired?'expired':expDays!==null&&expDays<=7?'expiring':expDays!==null&&expDays<=30?'expiring-soon':'';
+  const expBadge=isExpired?`<span class="badge b-red">EXPIRED ${Math.abs(expDays)}d ago</span>`:expDays!==null&&expDays<=7?`<span class="badge b-red">${expDays}d left</span>`:expDays!==null&&expDays<=30?`<span class="badge b-amber">${expDays}d left</span>`:'';
+  const locShort=d.locName||(d.locTz?d.locTz.replace('America/','').replace(/_/g,' '):'');
+  const totalEmailsSent=d.emailLog?d.emailLog.reduce((s,l)=>s+(l.count||0),0):0;
+
+  return`<div class="dcard ${cls}" id="dc-${d.id}">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
+    <div style="min-width:0">
+      <span class="dn">${d.domain}</span>
+      <span class="loc-tag">${locShort}</span>${expBadge}
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;flex-shrink:0">
+      ${sBadge(d.sold?'Sold':isExpired?'Expired':d.status)}
+      <button class="btn-danger" onclick="delDomain('${d.id}')">✕</button>
+    </div>
+  </div>
+  <div class="dm">${d.registrar||'—'} · Reg: ${fmt(pd(d.regDate))} · Exp: ${fmt(expDt)} · ${d.marketplace||'Not listed'}${d.listPrice?' · $'+d.listPrice.toLocaleString():''}${totalEmailsSent>0?' · '+totalEmailsSent+' email'+(totalEmailsSent>1?'s':'')+' sent':''}</div>
+  <div class="tl">
+    <div class="tl-row"><div class="tl-lbl">Phase 1</div><div class="tl-steps">
+      ${stepH('Email',d.p1.email,p1.email)}${stepH('+3d',d.p1.fu1,p1.fu1)}${stepH('+5d',d.p1.fu2,p1.fu2)}${stepH('+7d',d.p1.fu3,p1.fu3)}
+    </div></div>
+    ${p2.email?`<div class="tl-row"><div class="tl-lbl">Phase 2</div><div class="tl-steps">
+      ${p2.warn?`<span class="step ${isPast(p2.warn)||isToday(p2.warn)?'alert':'upcoming'}"><span class="dot ${isPast(p2.warn)?'d-due':'d-up'}"></span>Alert ${fmt(p2.warn)}</span>`:''}
+      ${stepH('Email',d.p2.email,p2.email)}${stepH('+3d',d.p2.fu1,p2.fu1)}${stepH('+5d',d.p2.fu2,p2.fu2)}${stepH('+7d',d.p2.fu3,p2.fu3)}
+    </div></div>`:''}
+    ${p3.email?`<div class="tl-row"><div class="tl-lbl">Phase 3</div><div class="tl-steps">
+      ${p3.warn30?`<span class="step ${daysUntil(p3.warn30)<=0?'alert':'upcoming'}"><span class="dot ${daysUntil(p3.warn30)<=0?'d-due':'d-up'}"></span>30d ${fmt(p3.warn30)}</span>`:''}
+      ${p3.warn7?`<span class="step ${daysUntil(p3.warn7)<=0?'alert':'upcoming'}"><span class="dot ${daysUntil(p3.warn7)<=0?'d-due':'d-up'}"></span>7d ${fmt(p3.warn7)}</span>`:''}
+      ${stepH('Email',d.p3.email,p3.email)}${stepH('+3d',d.p3.fu1,p3.fu1)}${stepH('+5d',d.p3.fu2,p3.fu2)}${stepH('+7d',d.p3.fu3,p3.fu3)}
+    </div></div>`:''}
+    ${d.pricedrop.active&&d.pricedrop.date?`<div class="tl-row"><div class="tl-lbl">Price drop</div><div class="tl-steps">
+      ${stepH('+3d',d.pricedrop.fu1,pdd.fu1)}${stepH('+5d',d.pricedrop.fu2,pdd.fu2)}${stepH('+7d',d.pricedrop.fu3,pdd.fu3)}
+    </div></div>`:''}
+  </div>
+  <div style="margin-top:10px"><button class="btn-ghost" onclick="toggleDet('${d.id}')">▾ Edit dates, emails & options</button></div>
+  <div class="det" id="det-${d.id}">
+    <div class="det-back">
+      <button class="btn btn-sm" onclick="toggleDet('${d.id}')" style="display:inline-flex;align-items:center;gap:5px;font-weight:700">← Back</button>
+      <span style="font-size:12px;color:var(--text3)">Editing: <strong>${d.domain}</strong></span>
+    </div>
+    <div class="det-tabs">
+      <button class="dtab on" onclick="switchTab('${d.id}','dates',this)">Dates sent</button>
+      <button class="dtab" onclick="switchTab('${d.id}','emaillog',this)">Email log</button>
+      <button class="dtab" onclick="switchTab('${d.id}','interest',this)">Interests</button>
+      <button class="dtab" onclick="switchTab('${d.id}','manage',this)">Status & price</button>
+    </div>
+
+    <div class="dtab-pane on" id="tab-dates-${d.id}">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Set the actual date you sent each email — follow-up dates recalculate automatically from your entry.</div>
+      <div style="background:var(--bg2);border-radius:var(--rs);padding:10px">
+        ${[['p1email','P1 Email'],['p1fu1','P1 Follow-up 1 (+3d)'],['p1fu2','P1 Follow-up 2 (+5d)'],['p1fu3','P1 Follow-up 3 (+7d)'],
+           ['p2email','P2 Email (6-month)'],['p2fu1','P2 Follow-up 1'],['p2fu2','P2 Follow-up 2'],['p2fu3','P2 Follow-up 3'],
+           ['p3email','P3 Email (pre-expiry)'],['p3fu1','P3 Follow-up 1'],['p3fu2','P3 Follow-up 2'],['p3fu3','P3 Follow-up 3'],
+           ...(d.pricedrop.active?[['pdfu1','Price-drop FU1'],['pdfu2','Price-drop FU2'],['pdfu3','Price-drop FU3']]:[])
+          ].map(([k,lbl])=>{const ph=k.startsWith('p1')?'p1':k.startsWith('p2')?'p2':k.startsWith('p3')?'p3':'pricedrop';const fk=k.replace('p1','').replace('p2','').replace('p3','').replace('pd','').toLowerCase()||k;
+          const phKey=k==='p1email'?'email':k==='p1fu1'?'fu1':k==='p1fu2'?'fu2':k==='p1fu3'?'fu3':k==='p2email'?'email':k==='p2fu1'?'fu1':k==='p2fu2'?'fu2':k==='p2fu3'?'fu3':k==='p3email'?'email':k==='p3fu1'?'fu1':k==='p3fu2'?'fu2':k==='p3fu3'?'fu3':k==='pdfu1'?'fu1':k==='pdfu2'?'fu2':'fu3';
+          return`<div class="date-row">
+            <label>${lbl}</label>
+            <input type="date" value="${d.sent[k]||''}" onchange="setSentDate('${d.id}','${k}','${ph}','${phKey}',this.value)">
+            <input type="checkbox" title="Mark sent" ${d[ph][phKey]?'checked':''} onchange="setCheck('${d.id}','${ph}','${phKey}',this.checked)">
+          </div>`;}).join('')}
+      </div>
+    </div>
+
+    <div class="dtab-pane" id="tab-emaillog-${d.id}">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Track which Gmail account you used and how many emails were sent from it for this domain.</div>
+      <div id="emaillog-list-${d.id}"></div>
+      <div id="emaillog-stats-${d.id}" style="margin-top:10px"></div>
+      <div style="margin-top:12px;padding:12px;background:var(--bg2);border-radius:var(--rs)">
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px">Log outreach</div>
+        <label style="margin-top:0">Select email accounts used</label>
+        <div id="el-emails-${sid(d.id)}" style="border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg);max-height:180px;overflow-y:auto;padding:6px 4px">
+          ${emailAccounts.map((a,i)=>`<label style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--rxs);cursor:pointer;margin:0;font-size:12px;font-weight:400;color:var(--text)" onmouseover="this.style.background='var(--blue-lt)'" onmouseout="this.style.background='transparent'">
+            <input type="checkbox" style="flex-shrink:0" data-email="${a.email}" class="el-chk-${sid(d.id)}" onchange="updateEmailCountInputs('${d.id}')">
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.email}</span>
+          </label>`).join('')}
+        </div>
+        <div style="display:flex;gap:6px;margin-top:4px">
+          <button class="btn-ghost" style="font-size:11px" onclick="selectAllEmails('${d.id}',true)">Select all</button>
+          <span style="color:var(--border2)">·</span>
+          <button class="btn-ghost" style="font-size:11px" onclick="selectAllEmails('${d.id}',false)">Clear</button>
+        </div>
+        <div id="el-count-wrap-${sid(d.id)}" style="margin-top:8px;display:none">
+          <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Emails sent per account</div>
+          <div id="el-count-inputs-${sid(d.id)}" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+        <div style="margin-top:8px">
+          <label style="margin-top:0">Note (optional — applies to all selected)</label>
+          <input type="text" id="el-note-${sid(d.id)}" placeholder="e.g. Phase 1 outreach">
+        </div>
+        <div style="margin-top:8px">
+          <label style="margin-top:0">Follow-up date <span style="font-size:11px;font-weight:400;color:var(--text3)">(auto-suggested, override if needed)</span></label>
+          <input type="date" id="el-fu-${sid(d.id)}">
+        </div>
+        <button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%" onclick="addEmailLog('${d.id}')">Log emails</button>
+      </div>
+    </div>
+
+    <div class="dtab-pane" id="tab-interest-${d.id}">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Log buyer interest and set follow-up reminders for this domain.</div>
+      <div id="interest-inline-list-${d.id}"></div>
+      <div style="margin-top:12px;padding:12px;background:var(--bg2);border-radius:var(--rs)">
+        <div style="font-size:12px;font-weight:700;margin-bottom:8px">Log new interest</div>
+        <label style="margin-top:0">Email that received interest <span style="color:var(--red)">*</span></label>
+        <select id="iil-email-${sid(d.id)}" style="width:100%"><option value="">— select email —</option>${emailAccounts.map(a=>`<option value="${a.email}">${a.email}</option>`).join('')}</select>
+        <label>Notes</label>
+        <textarea id="iil-notes-${sid(d.id)}" rows="2" placeholder="e.g. Buyer asked $2k, seems serious…" style="width:100%;resize:vertical;padding:8px 10px;border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:12px;font-family:inherit"></textarea>
+        <div class="g2" style="margin-top:0">
+          <div><label>Date of interest</label><input type="date" id="iil-date-${sid(d.id)}" onchange="(function(el){var fu=document.getElementById('iil-fu-${sid(d.id)}');if(fu&&!fu.dataset.manuallySet&&el.value){var d2=new Date(el.value+'T12:00:00');d2.setDate(d2.getDate()+3);fu.value=toVal(d2);}}).call(null,this)" oninput="(function(el){var fu=document.getElementById('iil-fu-${sid(d.id)}');if(fu&&!fu.dataset.manuallySet&&el.value){var d2=new Date(el.value+'T12:00:00');d2.setDate(d2.getDate()+3);fu.value=toVal(d2);}}).call(null,this)"></div>
+          <div><label>Follow-up date</label><input type="date" id="iil-fu-${sid(d.id)}" oninput="this.dataset.manuallySet='1'" onchange="this.dataset.manuallySet='1'"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%" onclick="addInterestInline('${d.id}')">Log interest</button>
+      </div>
+    </div>
+
+    <div class="dtab-pane" id="tab-manage-${d.id}">
+      <div class="g2">
+        <div>
+          <div class="sect" style="margin-top:0">Status</div>
+          <select onchange="setField('${d.id}','status',this.value)">${['Active','Pending Reply','No Response','Not Contacted'].map(s=>`<option ${d.status===s?'selected':''}>${s}</option>`).join('')}</select>
+          <div class="sect">Location</div>
+          <div style="font-size:12px;color:var(--text2)">${d.locName||d.locTz}</div>
+          <button class="btn-ghost" onclick="changeLocation('${d.id}')">Change location</button>
+          ${d.notes||d.docName?`<div class="sect">Details</div><div style="font-size:12px;color:var(--text2)">${d.docName?`📄 ${d.docName}<br>`:''}${d.notes?`📝 ${d.notes}`:''}</div>`:''}
+        </div>
+        <div>
+          <div class="sect" style="margin-top:0">Update price</div>
+          <div style="display:flex;gap:6px">
+            <input type="number" id="np-${d.id}" placeholder="${d.listPrice||'$'}" style="flex:1">
+            <button class="btn btn-sm btn-primary" onclick="updPrice('${d.id}')">Update</button>
+          </div>
+          ${d.priceHistory&&d.priceHistory.length?`<div class="sect">Price history</div>${d.priceHistory.map(p=>`<div class="ph-row"><span style="color:var(--text3)">${p.date}</span><b>$${Number(p.price).toLocaleString()}</b><span style="color:var(--text3);font-size:11px">${p.note}</span></div>`).join('')}`:''}
+          <div class="sect">Mark sold</div>
+          <label style="display:flex;align-items:center;gap:8px;margin:0;cursor:pointer"><input type="checkbox" ${d.sold?'checked':''} onchange="setSold('${d.id}',this.checked)"><span>Sold</span></label>
+          <label style="margin-top:8px">Sold date</label><input type="date" id="sd-${d.id}" value="${d.soldDate||''}">
+          <label>Sale price ($)</label><input type="number" id="sp-${d.id}" value="${d.soldPrice||''}" placeholder="0">
+          <button class="btn btn-sm btn-primary" style="margin-top:8px;width:100%" onclick="saveSold('${d.id}')">Save sale</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`;
+}
+
+function switchTab(id,tab,btn){
+  btn.closest('.det-tabs').querySelectorAll('.dtab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const det=document.getElementById('det-'+id);
+  det.querySelectorAll('.dtab-pane').forEach(p=>p.classList.remove('on'));
+  document.getElementById(`tab-${tab}-${id}`).classList.add('on');
+  if(tab==='emaillog'){renderEmailLog(id);
+    // Pre-fill FU date with next uncompleted phase follow-up date
+    const fuInp=document.getElementById(`el-fu-${sid(id)}`);
+    if(fuInp) fuInp.value=getNextPhaseFuDate(id)||toVal(addD(new Date(),2));
+  }
+  if(tab==='interest') renderInterestInline(id);
+}
+
+// Returns the next uncompleted phase follow-up date (ISO string) for a domain,
+// scanning p1→p2→p3→pricedrop in order, skipping already-marked steps.
+function getNextPhaseFuDate(id){
+  const d=domains.find(x=>x.id==id);if(!d)return'';
+  const p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
+  // Each entry: [scheduledDate, doneFlag]
+  const seq=[
+    [p1.fu1, d.p1.fu1],[p1.fu2, d.p1.fu2],[p1.fu3, d.p1.fu3],
+    [p2.fu1, d.p2.fu1],[p2.fu2, d.p2.fu2],[p2.fu3, d.p2.fu3],
+    [p3.fu1, d.p3.fu1],[p3.fu2, d.p3.fu2],[p3.fu3, d.p3.fu3],
+    ...(d.pricedrop&&d.pricedrop.active?[[pdd.fu1,d.pricedrop.fu1],[pdd.fu2,d.pricedrop.fu2],[pdd.fu3,d.pricedrop.fu3]]:[])
+  ];
+  for(const [dt,done] of seq){
+    if(!done&&dt){const iso=toVal(dt);if(iso)return iso;}
+  }
+  return'';
+}
+
+function renderEmailLog(id){
+  const d=domains.find(x=>x.id==id);if(!d)return;
+  const el=document.getElementById(`emaillog-list-${id}`);
+  const statsEl=document.getElementById(`emaillog-stats-${id}`);
+  if(!d.emailLog||!d.emailLog.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:6px 0">No email entries yet</div>';
+    if(statsEl)statsEl.innerHTML='';
+    return;
+  }
+  el.innerHTML=`<div style="border:1px solid var(--border);border-radius:var(--rs);overflow:hidden">`
+    +d.emailLog.map((l,i)=>`<div class="email-log-row" style="padding:8px 12px;background:${i%2===0?'var(--bg)':'var(--bg2)'}">
+      <div class="email-addr">${l.email}</div>
+      <span class="email-count">${l.count} email${l.count!==1?'s':''}</span>
+      ${l.note?`<span style="font-size:11px;color:var(--text3)">${l.note}</span>`:''}
+      <span style="font-size:10px;color:var(--text3)">${l.date||''}</span>
+      ${l.followUp?`<span style="font-size:10px;color:var(--purple-tx);background:var(--purple-lt);border:1px solid #c4b5fd;border-radius:20px;padding:1px 7px">FU ${fmt(pd(l.followUp))}</span>`:''}
+      <button class="btn-danger" style="padding:2px 6px;font-size:11px" onclick="removeEmailLog('${id}',${i})">✕</button>
+    </div>`).join('')+'</div>';
+  // Per-domain stats: aggregate by email address
+  if(statsEl){
+    const agg={};
+    d.emailLog.forEach(l=>{agg[l.email]=(agg[l.email]||0)+l.count;});
+    const entries=Object.entries(agg).sort((a,b)=>b[1]-a[1]);
+    const total=entries.reduce((s,[,c])=>s+c,0);
+    if(!entries.length){statsEl.innerHTML='';return;}
+    statsEl.innerHTML=`<div style="background:var(--blue-lt);border:1.5px solid #bfdbfe;border-radius:var(--rs);overflow:hidden;margin-top:4px">
+      <div style="padding:9px 14px;font-size:11px;font-weight:800;color:var(--blue-tx);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid #bfdbfe;display:flex;justify-content:space-between;align-items:center">
+        <span>📊 Email usage — this domain</span><span style="background:var(--blue);color:#fff;padding:2px 10px;border-radius:20px;font-size:11px">${total} total sent</span>
+      </div>
+      ${entries.map(([email,count])=>{
+        const pct=Math.round(count/total*100);
+        const short=email.length>36?email.slice(0,33)+'…':email;
+        return`<div style="padding:8px 14px;border-bottom:1px solid #bfdbfe;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;font-weight:700;color:var(--blue-tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${email}">${short}</div>
+            <div style="background:#bfdbfe;border-radius:20px;height:5px;margin-top:4px;overflow:hidden"><div style="background:var(--blue);height:100%;width:${pct}%;border-radius:20px;transition:width .3s"></div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+            <span style="font-size:10px;color:var(--blue-tx);opacity:.7">${pct}%</span>
+            <span class="email-count" style="font-size:12px;background:var(--blue);color:#fff;border-color:var(--blue)">${count} sent</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+}
+
+// Safe CSS suffix: replaces dots/special chars that break querySelectorAll class selectors
+function sid(id){return String(id).replace(/[^a-zA-Z0-9_-]/g,'_');}
+
+function selectAllEmails(id,state){
+  document.querySelectorAll(`.el-chk-${sid(id)}`).forEach(cb=>cb.checked=state);
+  updateEmailCountInputs(id);
+}
+
+function updateEmailCountInputs(id){
+  const s=sid(id);
+  const checked=[...document.querySelectorAll(`.el-chk-${s}:checked`)];
+  const wrap=document.getElementById(`el-count-wrap-${s}`);
+  const container=document.getElementById(`el-count-inputs-${s}`);
+  if(!wrap||!container)return;
+  if(!checked.length){wrap.style.display='none';container.innerHTML='';return;}
+  wrap.style.display='block';
+  // Preserve any counts the user already typed
+  const existing={};
+  container.querySelectorAll('input[type=number]').forEach(inp=>{if(inp.value)existing[inp.dataset.email]=inp.value;});
+  container.innerHTML=checked.map(cb=>{
+    const email=cb.dataset.email;
+    const short=email.length>36?email.slice(0,33)+'…':email;
+    return`<div style="display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rxs);padding:6px 10px">
+      <span style="flex:1;font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${email}">${short}</span>
+      <input type="number" data-email="${email}" class="el-count-inp-${s}" placeholder="# sent" min="1" value="${existing[email]||''}" style="width:80px;padding:5px 8px;font-size:12px;text-align:center;border:1.5px solid var(--border2);border-radius:var(--rxs);background:var(--bg);color:var(--text)">
+    </div>`;
+  }).join('');
+}
+
+function addEmailLog(id){
+  const s=sid(id);
+  const d=domains.find(x=>x.id==id);if(!d)return;
+  const checkboxes=[...document.querySelectorAll(`.el-chk-${s}:checked`)];
+  const selectedEmails=checkboxes.map(cb=>cb.dataset.email);
+  const note=document.getElementById(`el-note-${s}`).value;
+  if(!selectedEmails.length){toast('Select at least one email account','warn');return;}
+  // Collect per-email counts
+  const countInputs={};
+  document.querySelectorAll(`.el-count-inp-${s}`).forEach(inp=>{countInputs[inp.dataset.email]=parseInt(inp.value)||0;});
+  // Validate all selected emails have a count
+  const missing=selectedEmails.filter(e=>!countInputs[e]||countInputs[e]<1);
+  if(missing.length){toast(`Enter emails sent count for: ${missing.map(e=>e.split('@')[0]).join(', ')}`, 'warn');return;}
+  // Follow-up date: use manual input if set, otherwise auto-suggest +2 days
+  const fuInp=document.getElementById(`el-fu-${s}`);
+  const fuDate=fuInp&&fuInp.value?fuInp.value:toVal(addD(new Date(),2));
+  if(!d.emailLog)d.emailLog=[];
+  const dateStr=toVal(new Date());
+  let totalLogged=0;
+  selectedEmails.forEach(email=>{
+    const count=countInputs[email];
+    d.emailLog.push({email,count,note,date:dateStr,followUp:fuDate});
+    const acc=emailAccounts.find(a=>a.email===email);if(acc)acc.count+=count;
+    totalLogged+=count;
+  });
+  save();renderEmailLog(id);
+  document.querySelectorAll(`.el-chk-${s}`).forEach(cb=>cb.checked=false);
+  updateEmailCountInputs(id);
+  document.getElementById(`el-note-${s}`).value='';
+  // Re-suggest FU date for next entry from phases
+  if(fuInp){fuInp.value=getNextPhaseFuDate(id)||toVal(addD(new Date(),2));}
+  toast(`Logged ${totalLogged} total email${totalLogged!==1?'s':''} across ${selectedEmails.length} account${selectedEmails.length>1?'s':''}`, 'success');
+}
+
+function removeEmailLog(id,idx){
+  const d=domains.find(x=>x.id==id);if(!d||!d.emailLog)return;
+  const removed=d.emailLog.splice(idx,1)[0];
+  const acc=emailAccounts.find(a=>a.email===removed.email);if(acc)acc.count=Math.max(0,acc.count-(removed.count||0));
+  save();renderEmailLog(id);toast('Entry removed','success');
+}
+
+
+
+function closeAllDets(){
+  document.querySelectorAll('.det.open').forEach(el=>{
+    el.classList.remove('open');
+    const btn=el.previousElementSibling&&el.previousElementSibling.querySelector('button');
+    if(btn)btn.textContent='▾ Edit dates, emails & options';
+  });
+  const bar=document.getElementById('domains-back-bar');
+  if(bar)bar.style.display='none';
+}
+
+function toggleDet(id){
+  const el=document.getElementById('det-'+id);
+  const btn=el.previousElementSibling.querySelector('button');
+  // Close all others first
+  document.querySelectorAll('.det.open').forEach(other=>{
+    if(other!==el){
+      other.classList.remove('open');
+      const ob=other.previousElementSibling&&other.previousElementSibling.querySelector('button');
+      if(ob)ob.textContent='▾ Edit dates, emails & options';
+    }
+  });
+  el.classList.toggle('open');
+  btn.textContent=el.classList.contains('open')?'▴ Close options':'▾ Edit dates, emails & options';
+  // Back bar with domain name breadcrumb
+  const bar=document.getElementById('domains-back-bar');
+  const lbl=document.getElementById('domains-back-label');
+  if(bar){
+    bar.style.display=el.classList.contains('open')?'flex':'none';
+    bar.style.alignItems='center';
+  }
+  if(lbl&&el.classList.contains('open')){
+    const d=domains.find(x=>x.id==id);
+    lbl.textContent=d?'Viewing: '+d.domain:'';
+  }
+  if(el.classList.contains('open')){
+    renderEmailLog(id);
+    try{if(window.fdpUpgradeAll)window.fdpUpgradeAll();}catch(e){}
+    const card=el.closest('.dcard');
+    if(card) setTimeout(()=>card.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+  }
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+function setSentDate(id,key,ph,phKey,val){
+  const d=domains.find(x=>x.id==id);if(!d)return;
+  d.sent[key]=val;if(val)d[ph][phKey]=true;
+  if(ph==='p1'&&phKey==='email'&&val&&d.status==='Not Contacted')d.status='Active';
+
+  // ── Auto-fill next dates in the same phase ────────────────────────────────
+  // Map: which key was just set → [next key, days offset]
+  const NEXT={
+    p1email:['p1fu1',3], p1fu1:['p1fu2',5], p1fu2:['p1fu3',7],
+    p2email:['p2fu1',3], p2fu1:['p2fu2',5], p2fu2:['p2fu3',7],
+    p3email:['p3fu1',3], p3fu1:['p3fu2',5], p3fu2:['p3fu3',7],
+    pdfu1:  ['pdfu2', 5], pdfu2:['pdfu3',7]
+  };
+  if(val&&NEXT[key]){
+    const [nextKey,days]=NEXT[key];
+    // Only fill if the next date isn't already set by the user
+    if(!d.sent[nextKey]){
+      const base=new Date(val+'T12:00:00');
+      base.setDate(base.getDate()+days);
+      d.sent[nextKey]=toVal(base);
+      // Also auto-mark the checkbox for that step as scheduled (not sent yet)
+      // We intentionally do NOT set d[ph][nextPhKey]=true — that's only when actually sent
+    }
+    // Cascade: fill the one after that too, if also empty
+    const NEXT2=NEXT[nextKey];
+    if(NEXT2){
+      const [nextKey2,days2]=NEXT2;
+      if(!d.sent[nextKey2]){
+        const base2=new Date(d.sent[nextKey]+'T12:00:00');
+        base2.setDate(base2.getDate()+days2);
+        d.sent[nextKey2]=toVal(base2);
+      }
+    }
+  }
+  // ── Also update the visible input fields without full re-render ────────────
+  // (full renderDomains() would close the panel — update in-place instead)
+  const NEXT_KEYS=NEXT[key]?[NEXT[key][0]]:[]; 
+  if(NEXT_KEYS.length&&NEXT[NEXT_KEYS[0]]) NEXT_KEYS.push(NEXT[NEXT_KEYS[0]][0]);
+  NEXT_KEYS.forEach(nk=>{
+    const inp=document.querySelector(`input[onchange*="setSentDate('${id}','${nk}'"]`);
+    if(inp&&!inp.value&&d.sent[nk]) inp.value=d.sent[nk];
+  });
+
+  save();scheduleAll();try{scheduleAndroidReminders();}catch(e){}
+}
+function setCheck(id,ph,k,val){
+  const d=domains.find(x=>x.id==id);if(!d)return;
+  d[ph][k]=val;if(ph==='p1'&&k==='email'&&val&&d.status==='Not Contacted')d.status='Active';
+  save();renderDomains();
+}
+function setField(id,f,v){const d=domains.find(x=>x.id==id);if(!d)return;d[f]=v;save();}
+function updPrice(id){
+  const d=domains.find(x=>x.id==id);if(!d)return;
+  const np=parseFloat(document.getElementById('np-'+id).value);
+  if(!np||isNaN(np)){toast('Enter valid price','warn');return;}
+  const drop=np<(d.listPrice||0);
+  if(!d.priceHistory)d.priceHistory=[];
+  d.priceHistory.push({price:np,date:toVal(new Date()),note:drop?`Drop from $${(d.listPrice||0).toLocaleString()}`:`Rise from $${(d.listPrice||0).toLocaleString()}`});
+  d.listPrice=np;
+  if(drop){d.pricedrop={active:true,date:toVal(new Date()),fu1:false,fu2:false,fu3:false};toast(`Price drop logged — FU sequence triggered`,'success');}
+  else toast('Price updated','success');
+  save();renderDomains();scheduleAll();try{scheduleAndroidReminders();}catch(e){}
+}
+function setSold(id,v){const d=domains.find(x=>x.id==id);if(!d)return;d.sold=v;d.status=v?'Sold':'Active';save();}
+function saveSold(id){
+  const d=domains.find(x=>x.id==id);if(!d)return;
+  d.soldDate=document.getElementById('sd-'+id).value;
+  d.soldPrice=parseFloat(document.getElementById('sp-'+id).value)||0;
+  if(d.sold)d.status='Sold';save();renderDomains();toast(`${d.domain} sale saved`,'success');
+}
+function changeLocation(id){
+  const d=domains.find(x=>x.id==id);if(!d)return;
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.7);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`
+    <div style="background:var(--bg);border-radius:var(--r);padding:24px;max-width:380px;width:100%;box-shadow:var(--shadow-md)">
+      <div style="font-size:15px;font-weight:800;margin-bottom:4px;color:var(--text)">📍 Change Location</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Current: ${d.locName||d.locTz}</div>
+      <div style="position:relative">
+        <input id="cl-inp" type="text" placeholder="Type state or city…" autocomplete="off"
+          style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;font-family:inherit;outline:none;margin-bottom:4px">
+        <div id="cl-dd" style="position:absolute;top:calc(100% + 2px);left:0;right:0;background:var(--bg);border:1.5px solid var(--blue);border-radius:var(--rs);z-index:10;max-height:220px;overflow-y:auto;display:none;box-shadow:var(--shadow-md)"></div>
+      </div>
+      <div id="cl-ok" style="font-size:12px;color:var(--green);min-height:18px;margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" style="flex:1" onclick="saveLocationModal('${id}')">Save</button>
+        <button class="btn" style="flex:1" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  let selTz='',selName='';
+  const inp=document.getElementById('cl-inp');
+  const dd=document.getElementById('cl-dd');
+  inp.addEventListener('input',function(){
+    const q=inp.value.toLowerCase();
+    const results=US_LOCS.filter(l=>l.n.toLowerCase().includes(q)).slice(0,50);
+    if(!q||!results.length){dd.style.display='none';return;}
+    dd.innerHTML=results.map(l=>`<div style="padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)" onmousedown="(function(){document.getElementById('cl-inp').value='${l.n.replace(/'/g,"\\'")}';document.getElementById('cl-ok').textContent='✓ ${l.n.replace(/'/g,"\\'")} · ${l.tz.replace('America/','').replace(/_/g,' ')} time';document.getElementById('cl-dd').style.display='none';window._clSelTz='${l.tz}';window._clSelName='${l.n.replace(/'/g,"\\'")}';})()">
+      ${l.n}<span style="font-size:11px;color:var(--text3);margin-left:6px">${l.tz.replace('America/','').replace(/_/g,' ')}</span></div>`).join('');
+    dd.style.display='block';
+  });
+  inp.focus();
+}
+function saveLocationModal(id){
+  const d=domains.find(x=>x.id==id);if(!d)return;
+  const tz=window._clSelTz,name=window._clSelName;
+  if(!tz){toast('Please select a location from the list','warn');return;}
+  d.locTz=tz;d.locName=name;
+  window._clSelTz='';window._clSelName='';
+  save();renderDomains();
+  try{scheduleAndroidReminders();}catch(e){}
+  scheduleAll();
+  toast('Location updated to '+name,'success');
+  const modal=document.getElementById('cl-inp');
+  if(modal)modal.closest('[style*=fixed]').remove();
+}
+function delDomain(id){
+  const d=domains.find(x=>x.id==id);if(!d)return;
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.7);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`<div style="background:var(--bg);border-radius:var(--r);padding:24px;max-width:340px;width:100%;box-shadow:var(--shadow-md)">
+    <div style="font-size:15px;font-weight:800;margin-bottom:8px;color:var(--text)">Remove domain?</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:18px">${d.domain}</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" style="flex:1;background:var(--red);border-color:var(--red)" onclick="(function(){domains=domains.filter(x=>x.id!='${id}');save();renderDomains();renderDash();toast('Domain removed','success');this.closest('[style*=fixed]').remove();}).call(this)">Remove</button>
+      <button class="btn" style="flex:1" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+// ── METRIC CARD NAVIGATION ────────────────────────────────────────────────────
+let _metricFilter=''; // tracks active metric filter for expiring (not in a select)
+function navToDomainsFiltered(type, value){
+  // Reset all filter controls first
+  document.getElementById('s-q').value='';
+  document.getElementById('s-status').value='';
+  document.getElementById('s-interest').value='';
+  document.getElementById('s-overdue').value='';
+  if(document.getElementById('s-cat'))document.getElementById('s-cat').value='';
+  _metricFilter='';
+  if(type==='status') document.getElementById('s-status').value=value;
+  else if(type==='interest') document.getElementById('s-interest').value=value;
+  else if(type==='expiring') _metricFilter='expiring';
+  // Navigate to My Domains tab
+  const domainsBtn=[...document.querySelectorAll('.nb')].find(b=>b.textContent.trim()==='My Domains');
+  document.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));
+  document.getElementById('pg-domains').classList.add('on');
+  if(domainsBtn)domainsBtn.classList.add('on');
+  renderDomains();
+}
+
+// ── RENDER DOMAINS ────────────────────────────────────────────────────────────
+function renderDomains(){
+  const q=(document.getElementById('s-q').value||'').toLowerCase();
+  const fs=document.getElementById('s-status').value;
+  const fp=document.getElementById('s-phase').value;
+  const fi=document.getElementById('s-interest').value;
+  const fo=document.getElementById('s-overdue').value;
+  const fc=document.getElementById('s-cat')?document.getElementById('s-cat').value:'';
+  // Clear metric filter if any manual filter is active
+  if(q||fs||fp||fi||fo||fc) _metricFilter='';
+  let list=domains.filter(d=>{
+    if(q&&!d.domain.toLowerCase().includes(q))return false;
+    if(_metricFilter==='expiring'){
+      if(d.sold||!d.expiry)return false;
+      const n=daysUntil(pd(d.expiry));
+      return n!==null&&n>=0&&n<=30;
+    }
+    if(fs){const s=d.sold?'Sold':(pd(d.expiry)&&daysUntil(pd(d.expiry))<0&&!d.sold)?'Expired':d.status;if(s!==fs)return false;}
+    if(fp){
+      const p1=getP1(d),p2=getP2(d),p3=getP3(d);
+      if(fp==='1'&&!p1.email)return false;
+      if(fp==='2'&&!p2.email)return false;
+      if(fp==='3'&&!p3.email)return false;
+    }
+    if(fi){
+      const hasInterest=interests.some(i=>i.domain===d.domain);
+      if(fi==='yes'&&!hasInterest)return false;
+      if(fi==='no'&&hasInterest)return false;
+    }
+    if(fo==='overdue'){
+      const p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
+      const hasOverdue=[p1.fu1,p1.fu2,p1.fu3,p2.email,p2.fu1,p2.fu2,p2.fu3,p3.email,p3.fu1,p3.fu2,p3.fu3,
+        ...(d.pricedrop.active?[pdd.fu1,pdd.fu2,pdd.fu3]:[])
+      ].some(dt=>dt&&isPast(dt)&&!isToday(dt));
+      const hasIntOverdue=interests.some(i=>i.domain===d.domain&&!i.followUpDone&&i.followUp&&daysUntil(pd(i.followUp))<0);
+      if(!hasOverdue&&!hasIntOverdue)return false;
+    }
+    if(fc&&(d.category||'')!==fc)return false;
+    return true;
+  });
+  const el=document.getElementById('domain-list');
+  if(list.length){ renderDomainsAsList(list); } else { el.innerHTML='<div class="empty">No domains found</div>'; }
+}
+
+// ── DUE TODAY ─────────────────────────────────────────────────────────────────
+function getAllDue(){
+  const due=[];
+  domains.forEach(d=>{
+    if(d.sold)return;
+    const p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
+    [[p1.email,d.p1.email,'Phase 1 — initial email'],[p1.fu1,d.p1.fu1,'Phase 1 — +3d follow-up'],
+     [p1.fu2,d.p1.fu2,'Phase 1 — +5d follow-up'],[p1.fu3,d.p1.fu3,'Phase 1 — +7d follow-up'],
+     [p2.warn,false,'Phase 2 — 10-day heads-up'],[p2.email,d.p2.email,'Phase 2 — 6-month email'],
+     [p2.fu1,d.p2.fu1,'Phase 2 — +3d FU'],[p2.fu2,d.p2.fu2,'Phase 2 — +5d FU'],[p2.fu3,d.p2.fu3,'Phase 2 — +7d FU'],
+     [p3.warn30,false,'Expiry warning — 30 days left'],[p3.warn7,false,'Expiry warning — 7 days left!'],
+     [p3.email,d.p3.email,'Phase 3 — pre-expiry email'],[p3.fu1,d.p3.fu1,'Phase 3 — +3d FU'],
+     [p3.fu2,d.p3.fu2,'Phase 3 — +5d FU'],[p3.fu3,d.p3.fu3,'Phase 3 — +7d FU'],
+     ...(d.pricedrop.active&&pdd.fu1?[[pdd.fu1,d.pricedrop.fu1,'Price-drop +3d FU'],[pdd.fu2,d.pricedrop.fu2,'Price-drop +5d FU'],[pdd.fu3,d.pricedrop.fu3,'Price-drop +7d FU']]:[])
+    ].forEach(([dt,done,lbl])=>{if(!dt||done)return;if(isToday(dt))due.push({domain:d.domain,label:lbl,locName:d.locName||d.locTz,tz:d.locTz,dt});});
+  });
+  return due;
+}
+
+// ── RENDER DASHBOARD ──────────────────────────────────────────────────────────
+function renderDash(){
+  const total=domains.length,sold=domains.filter(d=>d.sold).length;
+  const active=domains.filter(d=>!d.sold&&d.status==='Active').length;
+  const rev=domains.filter(d=>d.sold).reduce((s,d)=>s+(d.soldPrice||0),0);
+  const expiredList=domains.filter(d=>{if(d.sold||!d.expiry)return false;const n=daysUntil(pd(d.expiry));return n!==null&&n<0;});
+  const expiring=domains.filter(d=>{if(d.sold||!d.expiry)return false;const n=daysUntil(pd(d.expiry));return n!==null&&n>=0&&n<=30;}).length;
+  const totalEmails=emailAccounts.reduce((s,a)=>s+a.count,0);
+  const activeInterests=interests.filter(i=>!i.followUpDone&&i.followUp&&daysUntil(pd(i.followUp))>=0).length;
+  const overdueInterests=interests.filter(i=>!i.followUpDone&&i.followUp&&daysUntil(pd(i.followUp))<0).length;
+
+  document.getElementById('metrics').innerHTML=`
+    <div class="metric m-blue" onclick="navToDomainsFiltered('','');" title="Show all domains"><div class="metric-icon">🌐</div><div class="ml">Total</div><div class="mv">${total}</div></div>
+    <div class="metric m-green" onclick="navToDomainsFiltered('status','Active')" title="Filter: Active"><div class="metric-icon">✅</div><div class="ml">Active</div><div class="mv">${active}</div></div>
+    <div class="metric m-teal" onclick="navToDomainsFiltered('status','Sold')" title="Filter: Sold"><div class="metric-icon">💰</div><div class="ml">Sold</div><div class="mv">${sold}</div><div class="ms">$${rev.toLocaleString()}</div></div>
+    <div class="metric m-purple" onclick="navToDomainsFiltered('interest','yes')" title="Filter: Has interest"><div class="metric-icon">💬</div><div class="ml">Interests</div><div class="mv" style="color:${interests.length>0?'var(--purple)':'inherit'}">${interests.length}</div><div class="ms">${overdueInterests>0?`<span style="color:var(--red)">${overdueInterests} FU overdue</span>`:activeInterests>0?`${activeInterests} FU pending`:'logged'}</div></div>
+    <div class="metric m-amber" onclick="navToDomainsFiltered('expiring','1')" title="Filter: Expiring ≤30 days"><div class="metric-icon">⏰</div><div class="ml">Expiring</div><div class="mv" style="color:${expiring>0?'var(--amber)':'inherit'}">${expiring}</div><div class="ms">≤30 days</div></div>
+    <div class="metric m-red" onclick="navToDomainsFiltered('status','Expired')" title="Filter: Expired"><div class="metric-icon">🚨</div><div class="ml">Expired</div><div class="mv" style="color:${expiredList.length>0?'var(--red)':'inherit'}">${expiredList.length}</div><div class="ms">need renewal</div></div>`;
+
+  // ── Insights summary ──
+  const topEmailAcc=emailAccounts.filter(a=>a.count>0).sort((a,b)=>b.count-a.count)[0]||null;
+  const noReplies=domains.filter(d=>!d.sold&&(d.status==='No Response'||d.status==='Not Contacted')).length;
+  const domainsWithInterest=new Set(interests.map(i=>i.domain)).size;
+  const insightsEl=document.getElementById('insights-wrap');
+  if(domains.length){
+    insightsEl.innerHTML=`<div class="insights-card">
+      <div class="insights-title">Insights</div>
+      <div class="insights-grid">
+        <div class="insight-item">
+          <div class="insight-lbl">Top email account</div>
+          ${topEmailAcc
+            ?`<div style="font-size:12px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${topEmailAcc.email}">${topEmailAcc.email}</div><div class="insight-sub">${topEmailAcc.count} email${topEmailAcc.count!==1?'s':''} sent</div>`
+            :`<div class="insight-sub">No emails logged yet</div>`}
+        </div>
+        <div class="insight-item">
+          <div class="insight-lbl">No replies</div>
+          <div class="insight-val" style="color:${noReplies>0?'var(--amber)':'var(--text)'}">${noReplies}</div>
+          <div class="insight-sub">domain${noReplies!==1?'s':''} not contacted / no response</div>
+        </div>
+        <div class="insight-item">
+          <div class="insight-lbl">With interest</div>
+          <div class="insight-val" style="color:${domainsWithInterest>0?'var(--purple)':'var(--text)'}">${domainsWithInterest}</div>
+          <div class="insight-sub">domain${domainsWithInterest!==1?'s':''} with buyer interest</div>
+        </div>
+      </div>
+    </div>`;
+  } else insightsEl.innerHTML='';
+
+  // Expired domains section
+  const expSec=document.getElementById('expired-section');
+  if(expiredList.length){
+    expSec.innerHTML=`<div class="sect" style="color:var(--red)">Expired domains — action needed</div>`
+      +expiredList.map(d=>`<div class="expired-banner">
+        <div><div class="en">${d.domain}</div><div class="ed">Expired ${fmt(pd(d.expiry))} · ${Math.abs(daysUntil(pd(d.expiry)))} days ago · ${d.registrar||'—'}</div></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="markRenewed('${d.id}')">Mark renewed</button>
+          <button class="btn btn-sm btn-danger" onclick="delDomain('${d.id}')">Remove</button>
+        </div>
+      </div>`).join('');
+  } else expSec.innerHTML='';
+
+  const alerts=[];
+  domains.forEach(d=>{
+    if(d.sold||!d.expiry)return;
+    const n=daysUntil(pd(d.expiry));
+    if(n!==null&&n>=0&&n<=7)alerts.push(`<div class="alert al-danger"><b>${d.domain}</b> expires in ${n} day${n!==1?'s':''} — renew now! (${fmt(pd(d.expiry))})</div>`);
+    else if(n!==null&&n>7&&n<=30)alerts.push(`<div class="alert al-warn"><b>${d.domain}</b> expires in ${n} days (${fmt(pd(d.expiry))})</div>`);
+  });
+  document.getElementById('alerts-wrap').innerHTML=alerts.join('');
+
+  const due=getAllDue();
+  document.getElementById('chip-due').style.display=due.length?'inline-flex':'none';
+  document.getElementById('chip-due').textContent=`${due.length} due today`;
+  const fuOverdue=interests.filter(i=>!i.followUpDone&&i.followUp&&daysUntil(pd(i.followUp))<=0).length;
+  document.getElementById('chip-int').style.display=fuOverdue?'inline-flex':'none';
+  document.getElementById('chip-int').textContent=`${fuOverdue} interest FU`;
+  document.getElementById('chip-exp').style.display=expiredList.length?'inline-flex':'none';
+  // Sidebar reminder dot
+  document.getElementById('chip-exp').textContent=`${expiredList.length} expired`;
+
+  document.getElementById('due-today').innerHTML=due.length
+    ?due.map(r=>`<div class="alert al-warn" style="margin-bottom:6px"><b>${r.domain}</b><div style="font-size:12px;margin-top:2px">${r.label}</div><div style="font-size:11px;margin-top:2px;opacity:.8">Notify at 8am · ${r.locName}</div></div>`).join('')
+    :'<div style="font-size:13px;color:var(--text3);padding:6px 0">No follow-ups due today</div>';
+
+  document.getElementById('recent-list').innerHTML=domains.slice(0,5).map(d=>{
+    const n=d.expiry?daysUntil(pd(d.expiry)):null;
+    const isExp=n!==null&&n<0&&!d.sold;
+    return`<div class="dcard ${d.sold?'sold':isExp?'expired':n!==null&&n<=7?'expiring':n!==null&&n<=30?'expiring-soon':''}" onclick="openDomainDetail('${d.id}')" style="cursor:pointer">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+        <span class="dn">${d.domain}</span>
+        <div style="display:flex;align-items:center;gap:6px">${sBadge(d.sold?'Sold':isExp?'Expired':d.status)}<span style="font-size:11px;color:var(--text3);font-weight:600">View →</span></div>
+      </div>
+      <div class="dm">${d.registrar||'—'} · ${d.locName||d.locTz||'—'} · Exp: ${fmt(pd(d.expiry))}${d.listPrice?' · $'+d.listPrice.toLocaleString():''}</div>
+    </div>`;}).join('')||'<div class="empty">No domains yet</div>';
+}
+
+function openDomainDetail(id){
+  // Navigate to My Domains tab
+  const domainsBtn=[...document.querySelectorAll('.nb')].find(b=>b.textContent.trim()==='My Domains');
+  document.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));
+  document.getElementById('pg-domains').classList.add('on');
+  if(domainsBtn)domainsBtn.classList.add('on');
+  renderDomains();
+  // Scroll to and open the domain's detail panel
+  setTimeout(()=>{
+    const card=document.getElementById('dc-'+id);
+    if(!card)return;
+    card.scrollIntoView({behavior:'smooth',block:'center'});
+    const det=document.getElementById('det-'+id);
+    if(det&&!det.classList.contains('open')){
+      toggleDet(id);
+    }
+    // Highlight briefly
+    card.style.transition='box-shadow .2s';
+    card.style.boxShadow='0 0 0 3px var(--blue)';
+    setTimeout(()=>{card.style.boxShadow='';},1800);
+  },80);
+}
+
+function markRenewed(id){
+  const d=domains.find(x=>x.id==id);if(!d)return;
+  const base=pd(d.expiry)&&pd(d.expiry)>today()?pd(d.expiry):new Date();
+  base.setFullYear(base.getFullYear()+1);
+  d.expiry=toVal(base);
+  save();renderDash();renderDomains();
+  toast(`${d.domain} renewed — expiry set to ${fmt(base)}`,'success');
+}
+
+// ── EMAIL ACCOUNTS PAGE ───────────────────────────────────────────────────────
+function renderEmailAccounts(){
+  const el=document.getElementById('email-accounts-list');
+  el.innerHTML=emailAccounts.map((a,i)=>`<div class="email-log-row">
+    <div class="email-addr">${a.email}</div>
+    <span class="email-count">${a.count} sent</span>
+    <button class="btn-danger" onclick="removeEmailAccount(${i})">✕</button>
+  </div>`).join('')||'<div style="font-size:12px;color:var(--text3)">No email accounts yet</div>';
+
+  // usage across domains
+  const usage={};
+  emailAccounts.forEach(a=>usage[a.email]=0);
+  domains.forEach(d=>{(d.emailLog||[]).forEach(l=>{if(usage[l.email]!==undefined)usage[l.email]+=l.count;else usage[l.email]=l.count;});});
+  const usageEl=document.getElementById('email-usage-list');
+  const entries=Object.entries(usage).sort((a,b)=>b[1]-a[1]);
+  usageEl.innerHTML=entries.length?entries.map(([email,count])=>`<div class="email-log-row">
+    <div class="email-addr">${email}</div>
+    <span class="email-count">${count} email${count!==1?'s':''}</span>
+  </div>`).join(''):'<div style="font-size:12px;color:var(--text3)">No emails logged yet</div>';
+}
+
+function addEmailAccount(){
+  const inp=document.getElementById('new-email-inp');
+  const email=inp.value.trim().toLowerCase();
+  if(!email||!email.includes('@')){toast('Enter a valid email address','warn');return;}
+  if(emailAccounts.find(a=>a.email===email)){toast('Email already in list','warn');return;}
+  emailAccounts.push({email,count:0});
+  save();renderEmailAccounts();inp.value='';toast(`${email} added`,'success');
+}
+
+function removeEmailAccount(i){
+  // confirm() is blocked in Android WebView — use inline modal instead
+  const a=emailAccounts[i];if(!a)return;
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.7);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`<div style="background:var(--bg);border-radius:var(--r);padding:24px;max-width:340px;width:100%;box-shadow:var(--shadow-md)">
+    <div style="font-size:15px;font-weight:800;margin-bottom:8px;color:var(--text)">Remove email account?</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:18px;word-break:break-all">${a.email}</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" style="flex:1;background:var(--red);border-color:var(--red)" onclick="(function(){emailAccounts.splice(${i},1);save();renderEmailAccounts();toast('Email account removed','success');this.closest('[style*=fixed]').remove();}).call(this)">Remove</button>
+      <button class="btn" style="flex:1" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+// ── REMINDERS ─────────────────────────────────────────────────────────────────
+function renderReminders(){
+  const pb=document.getElementById('notif-btn'),ps=document.getElementById('notif-st');
+  if('Notification' in window){
+    if(Notification.permission==='granted'){pb.textContent='Notifications enabled ✓';pb.disabled=true;pb.style.background='var(--green)';ps.textContent='You will be notified at 8am in each domain US timezone.';}
+    else if(Notification.permission==='denied') ps.textContent='Blocked — Settings → Site settings → Notifications → Allow.';
+  }else ps.textContent='Browser notifications not supported.';
+
+  const allItems=[];const now=today();
+  domains.forEach(d=>{
+    if(d.sold)return;
+    const p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
+    const loc=d.locName||d.locTz||'Eastern';
+    [[p1.fu1,d.p1.fu1,'Phase 1 +3d FU'],[p1.fu2,d.p1.fu2,'Phase 1 +5d FU'],[p1.fu3,d.p1.fu3,'Phase 1 +7d FU'],
+     [p2.warn,false,'Phase 2 alert'],[p2.email,d.p2.email,'Phase 2 6-month email'],
+     [p2.fu1,d.p2.fu1,'Phase 2 +3d'],[p2.fu2,d.p2.fu2,'Phase 2 +5d'],[p2.fu3,d.p2.fu3,'Phase 2 +7d'],
+     [p3.warn30,false,'30-day expiry warning'],[p3.warn7,false,'7-day expiry warning'],
+     [p3.email,d.p3.email,'Phase 3 email'],[p3.fu1,d.p3.fu1,'Phase 3 +3d'],[p3.fu2,d.p3.fu2,'Phase 3 +5d'],[p3.fu3,d.p3.fu3,'Phase 3 +7d'],
+     ...(d.pricedrop.active&&pdd.fu1?[[pdd.fu1,d.pricedrop.fu1,'PD +3d'],[pdd.fu2,d.pricedrop.fu2,'PD +5d'],[pdd.fu3,d.pricedrop.fu3,'PD +7d']]:[])
+    ].forEach(([dt,done,lbl])=>{if(!dt||done)return;const days=daysUntil(dt);allItems.push({domain:d.domain,label:lbl,dt,loc,tz:d.locTz,days});});
+  });
+  // Interest follow-ups — include overdue ones too
+  interests.forEach(it=>{
+    if(!it.followUp||it.followUpDone)return;
+    const fuDt=pd(it.followUp);if(!fuDt)return;
+    const days=daysUntil(fuDt);
+    allItems.push({domain:it.domain,label:`Interest follow-up (${it.email})`,dt:fuDt,loc:'',tz:'',days,isInterest:true,iid:it.id});
+  });
+  allItems.sort((a,b)=>a.dt-b.dt);
+
+  const overdue=allItems.filter(r=>r.days<0);
+  const dueToday=allItems.filter(r=>r.days===0);
+  const upcoming=allItems.filter(r=>r.days>0);
+
+  // Overdue banner
+  const bannerEl=document.getElementById('rem-overdue-banner');
+  bannerEl.innerHTML=overdue.length
+    ?`<div class="alert al-danger" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span><b>${overdue.length} overdue reminder${overdue.length>1?'s':''}</b> — action needed</span></div>`
+    :'';
+
+  function remRowHTML(r){
+    const isOv=r.days<0;
+    const isToday2=r.days===0;
+    const cls=isOv?'al-danger':isToday2?'al-warn':'al-info';
+    const when=isOv?`${Math.abs(r.days)} day${Math.abs(r.days)!==1?'s':''} overdue`:isToday2?'Today':r.days===1?'Tomorrow':`In ${r.days} days`;
+    const fullWhen=isOv?`<b style="color:var(--red)">${when}</b>`:isToday2||r.days===1?`<b>${when}</b>`:`In ${r.days} days`;
+    // Status label badge
+    const statusBadge=isOv
+      ?`<span style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;background:var(--red);color:#fff;margin-left:6px">OVERDUE</span>`
+      :isToday2
+        ?`<span style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;background:var(--amber);color:#fff;margin-left:6px">DUE TODAY</span>`
+        :`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--blue-lt);color:var(--blue-tx);border:1px solid #bfdbfe;margin-left:6px">UPCOMING</span>`;
+    // Encode reminder for calendar button
+    const rEnc=encodeURIComponent(JSON.stringify({domain:r.domain,label:r.label,dt:r.dt.toISOString(),tz:r.tz||'',loc:r.loc||'',isInterest:r.isInterest||false,iid:r.iid||''}));
+    const calBtn=`<button class="btn btn-sm" style="flex-shrink:0;font-size:11px;padding:4px 10px" onclick='addReminderToCalendar(JSON.parse(decodeURIComponent("${rEnc}")),true)' title="Add to calendar">📅</button>`;
+    return`<div class="alert ${cls}" style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap"><div style="min-width:0;flex:1"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px"><b>${r.domain}</b>${statusBadge}</div><div style="font-size:12px;margin-top:3px">${r.label} — ${fullWhen} (${fmt(r.dt)})${r.isInterest?`<span style="font-size:10px;opacity:.7"> · Interest FU</span>`:''}</div>${r.tz?`<div style="font-size:10px;color:var(--text3);margin-top:2px">🕗 8am · ${r.loc} (${r.tz.replace('America/','').replace(/_/g,' ')})</div>`:''}</div><div style="display:flex;gap:5px;align-items:center;flex-shrink:0">${calBtn}${r.isInterest?`<button class="btn btn-sm" style="font-size:11px;padding:4px 10px" onclick="markFUDone('${r.iid}');renderReminders()">Done</button>`:''}</div></div></div>`;
+  }
+
+  // Overdue section
+  const ovEl=document.getElementById('rem-overdue-list');
+  ovEl.innerHTML=overdue.length?overdue.map(remRowHTML).join(''):'';
+
+  // Due today section
+  const todayWrap=document.getElementById('rem-today-wrap');
+  const todayEl=document.getElementById('rem-today-list');
+  if(dueToday.length){todayWrap.style.display='block';todayEl.innerHTML=dueToday.map(remRowHTML).join('');}
+  else todayWrap.style.display='none';
+
+  // Upcoming section
+  const upWrap=document.getElementById('rem-upcoming-wrap');
+  const upEl=document.getElementById('rem-upcoming-list');
+  if(upcoming.length){upWrap.style.display='block';upEl.innerHTML=upcoming.map(remRowHTML).join('');}
+  else upWrap.style.display='none';
+
+  // Legacy rem-list: show empty state only if nothing at all
+  document.getElementById('rem-list').innerHTML=(!overdue.length&&!dueToday.length&&!upcoming.length)
+    ?'<div class="empty">No upcoming reminders</div>':'';
+}
+
+function reqNotif(){
+  if(!('Notification' in window)){toast('Not supported','warn');return;}
+  Notification.requestPermission().then(p=>{if(p==='granted'){toast('Notifications enabled!','success');scheduleAll();renderReminders();}else toast('Blocked — enable in browser settings','warn');});
+}
+let timers=[];
+function scheduleAll(){
+  timers.forEach(clearTimeout);timers=[];
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  domains.forEach(d=>{
+    if(d.sold)return;
+    const tz=d.locTz||'America/New_York';
+    const p1=getP1(d),p2=getP2(d),p3=getP3(d);
+    [[p1.fu1,'FU1'],[p1.fu2,'FU2'],[p1.fu3,'FU3'],[p2.email,'6-month email'],[p3.warn30,'Expires 30 days'],[p3.warn7,'Expires 7 days!']].forEach(([dt,lbl])=>{
+      if(!dt)return;
+      try{const am8=new Date(new Date().toLocaleDateString('en-US',{timeZone:tz})+' 08:00:00');const ms=am8-Date.now();if(ms>0&&ms<86400000)timers.push(setTimeout(()=>new Notification(`${d.domain} — ${lbl}`,{body:'Domain Portfolio Pro reminder'}),ms));}catch(e){}
+    });
+  });
+}
+
+// ── INTEREST TRACKING ─────────────────────────────────────────────────────────
+function addInterest(domainId, emailVal, notesVal, dateVal, fuVal){
+  // Can be called from the dedicated page or inline from domain card
+  const domain = domainId || document.getElementById('int-domain-sel').value;
+  const email = emailVal || document.getElementById('int-email-sel').value;
+  const notes = notesVal !== undefined ? notesVal : document.getElementById('int-notes').value.trim();
+  const date = dateVal || document.getElementById('int-date').value || toVal(new Date());
+  const followUp = fuVal !== undefined ? fuVal : document.getElementById('int-fu-date').value;
+  if(!domain){toast('Select a domain','warn');return;}
+  if(!email){toast('Select the email that received interest','warn');return;}
+  const entry={
+    id: String(Date.now())+String(Math.floor(Math.random()*100000)),
+    domain, email, notes, date,
+    followUp: followUp||'',
+    followUpDone: false,
+    addedAt: toVal(new Date())
+  };
+  interests.unshift(entry);
+  save();
+  // Update domain status to Pending Reply if not already sold/active-follow
+  const d=domains.find(x=>x.domain===domain);
+  if(d&&!d.sold&&d.status==='Not Contacted'){d.status='Pending Reply';save();}
+  if(!domainId){
+    // Clear full-page form — also reset manuallySet so auto-suggest works next time
+    document.getElementById('int-notes').value='';
+    var fuEl=document.getElementById('int-fu-date');
+    var dateEl=document.getElementById('int-date');
+    if(fuEl){fuEl.value='';delete fuEl.dataset.manuallySet;}
+    if(dateEl){dateEl.value='';}
+    document.getElementById('int-domain-sel').value='';
+    document.getElementById('int-email-sel').value='';
+  }
+  renderInterests();
+  scheduleAll();
+  toast(`Interest logged for ${domain}`,'success');
+  return entry;
+}
+
+function addInterestInline(id){
+  const s=sid(id);
+  const d=domains.find(x=>x.id==id);if(!d)return;
+  const email=document.getElementById(`iil-email-${s}`).value;
+  const notes=document.getElementById(`iil-notes-${s}`).value.trim();
+  const date=document.getElementById(`iil-date-${s}`).value||toVal(new Date());
+  const fu=document.getElementById(`iil-fu-${s}`).value;
+  if(!email){toast('Select the email that received interest','warn');return;}
+  addInterest(d.domain, email, notes, date, fu);
+  document.getElementById(`iil-notes-${s}`).value='';
+  var iilDate=document.getElementById(`iil-date-${s}`);
+  var iilFu=document.getElementById(`iil-fu-${s}`);
+  if(iilDate)iilDate.value='';
+  if(iilFu){iilFu.value='';delete iilFu.dataset.manuallySet;}
+  document.getElementById(`iil-email-${s}`).value='';
+  renderInterestInline(id);
+}
+
+function renderInterestInline(id){
+  const d=domains.find(x=>x.id==id);if(!d)return;
+  const el=document.getElementById(`interest-inline-list-${id}`);if(!el)return;
+  const items=interests.filter(i=>i.domain===d.domain);
+  if(!items.length){el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:4px 0">No interests logged yet</div>';return;}
+  el.innerHTML=`<div style="border:1px solid var(--border);border-radius:var(--rs);overflow:hidden">`
+    +items.map((it,idx)=>interestRowHTML(it,idx,true)).join('')+'</div>';
+}
+
+function interestRowHTML(it, idx, isInline){
+  const fuDt=pd(it.followUp);
+  const fuDays=fuDt?daysUntil(fuDt):null;
+  let fuBadge='';
+  if(it.followUp){
+    if(it.followUpDone) fuBadge=`<span class="interest-fu-badge" style="background:var(--green-lt);color:var(--green-tx);border-color:#86efac">✓ FU done</span>`;
+    else if(fuDays!==null&&fuDays<0) fuBadge=`<span class="interest-fu-badge" style="background:var(--red-lt);color:var(--red-tx);border-color:#fca5a5">FU overdue ${fmt(fuDt)}</span>`;
+    else if(fuDays===0) fuBadge=`<span class="interest-fu-badge" style="background:var(--amber-lt);color:var(--amber-tx);border-color:var(--amber)">FU today!</span>`;
+    else fuBadge=`<span class="interest-fu-badge">FU ${fmt(fuDt)}</span>`;
+  }
+  const globalIdx=interests.findIndex(x=>x.id===it.id);
+  return`<div class="interest-row">
+    <div style="flex:1;min-width:0">
+      ${!isInline?`<div class="interest-domain">${it.domain}</div>`:''}
+      <div class="interest-email">${it.email}</div>
+      ${it.notes?`<div class="interest-note">${it.notes}</div>`:''}
+      <div class="interest-meta">
+        <span class="badge b-gray" style="font-size:10px">${fmt(pd(it.date))}</span>
+        ${fuBadge}
+        ${it.followUp&&!it.followUpDone?`<button class="btn-ghost" style="font-size:10px" onclick="markFUDone('${it.id}')">Mark FU done</button>`:''}
+      </div>
+    </div>
+    <button class="btn-danger" style="padding:2px 6px;font-size:11px;flex-shrink:0" onclick="removeInterest('${it.id}')">✕</button>
+  </div>`;
+}
+
+function renderInterests(){
+  const q=(document.getElementById('int-search')?document.getElementById('int-search').value||'':'').toLowerCase();
+  const ff=document.getElementById('int-fu-filter')?document.getElementById('int-fu-filter').value:'';
+  let items=[...interests];
+  if(q) items=items.filter(i=>i.domain.toLowerCase().includes(q)||i.email.toLowerCase().includes(q)||(i.notes||'').toLowerCase().includes(q));
+  if(ff==='pending') items=items.filter(i=>i.followUp&&!i.followUpDone&&daysUntil(pd(i.followUp))>=0);
+  else if(ff==='overdue') items=items.filter(i=>i.followUp&&!i.followUpDone&&daysUntil(pd(i.followUp))<0);
+  else if(ff==='done') items=items.filter(i=>i.followUpDone);
+  else if(ff==='none') items=items.filter(i=>!i.followUp);
+  const el=document.getElementById('interest-list');if(!el)return;
+  el.innerHTML=items.length
+    ?`<div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden">`+items.map((it,i)=>interestRowHTML(it,i,false)).join('')+'</div>'
+    :'<div class="empty">No interest entries found</div>';
+}
+
+function markFUDone(iid){
+  const it=interests.find(x=>x.id===iid);if(!it)return;
+  it.followUpDone=true;save();renderInterests();
+  // Re-render any open inline panel
+  const d=domains.find(x=>x.domain===it.domain);
+  if(d) renderInterestInline(d.id);
+  toast('Follow-up marked done','success');
+}
+
+function removeInterest(iid){
+  const it=interests.find(x=>x.id===iid);if(!it)return;
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.7);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`<div style="background:var(--bg);border-radius:var(--r);padding:24px;max-width:340px;width:100%;box-shadow:var(--shadow-md)">
+    <div style="font-size:15px;font-weight:800;margin-bottom:8px;color:var(--text)">Remove interest entry?</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:18px">${it.domain} · ${it.email}</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" style="flex:1;background:var(--red);border-color:var(--red)" onclick="(function(){interests=interests.filter(x=>x.id!=='${iid}');save();renderInterests();toast('Removed','success');this.closest('[style*=fixed]').remove();}).call(this)">Remove</button>
+      <button class="btn" style="flex:1" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+function populateInterestSelects(){
+  const dSel=document.getElementById('int-domain-sel');
+  const eSel=document.getElementById('int-email-sel');
+  if(!dSel||!eSel)return;
+  dSel.innerHTML='<option value="">— select domain —</option>'+domains.filter(d=>!d.sold).map(d=>`<option value="${d.domain}">${d.domain}</option>`).join('');
+  eSel.innerHTML='<option value="">— select email —</option>'+emailAccounts.map(a=>`<option value="${a.email}">${a.email}</option>`).join('');
+}
+
+// ── IMPORT / EXPORT ───────────────────────────────────────────────────────────
+function handleDrop(e){e.preventDefault();const f=e.dataTransfer.files[0];if(f)handleFile(f);}
+function parseCSVLine(line){
+  var result=[],cur='',inQ=false;
+  for(var i=0;i<line.length;i++){
+    var ch=line[i];
+    if(ch==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else{inQ=!inQ;}}
+    else if(ch===','&&!inQ){result.push(cur.trim());cur='';}
+    else{cur+=ch;}
+  }
+  result.push(cur.trim());
+  return result;
+}
+function handleFile(file){
+  if(!file){toast('No file selected','warn');return;}
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var text=e.target.result;
+      var lines=text.split(/\r?\n/);
+      var dataLines=[];
+      for(var x=0;x<lines.length;x++){if(lines[x].trim())dataLines.push(lines[x]);}
+      if(dataLines.length<2){toast('File empty or no data rows','warn');return;}
+      var hdrs=parseCSVLine(dataLines[0]);
+      for(var h=0;h<hdrs.length;h++){hdrs[h]=hdrs[h].toLowerCase().replace(/[^a-z_]/g,'');}
+      var domIdx=hdrs.indexOf('domain');
+      if(domIdx===-1){toast('No "domain" column found in CSV','warn');return;}
+      function getCol(row,name){var i=hdrs.indexOf(name);if(i>=0&&row[i])return row[i].replace(/^"|"$/g,'').trim();return '';}
+      var imp=0,skip=0,log=[];
+      for(var i=1;i<dataLines.length;i++){
+        try{
+          var row=parseCSVLine(dataLines[i]);
+          var domain=getCol(row,'domain');
+          if(!domain){skip++;continue;}
+          var exists=false;
+          for(var d2=0;d2<domains.length;d2++){if(domains[d2].domain===domain){exists=true;break;}}
+          if(exists){skip++;log.push(domain+' - already exists');continue;}
+          var regDate=getCol(row,'registration_date')||getCol(row,'reg_date')||getCol(row,'regdate');
+          if(!regDate){skip++;log.push(domain+' - skipped: no registration date');continue;}
+          var locStr=getCol(row,'location')||getCol(row,'state')||'';
+          var locObj={n:'New York',tz:'America/New_York'};
+          if(locStr){for(var l=0;l<US_LOCS.length;l++){if(US_LOCS[l].n.toLowerCase().indexOf(locStr.toLowerCase())>=0){locObj=US_LOCS[l];break;}}}
+          var expiry=getCol(row,'expiry_date')||getCol(row,'expiry')||'';
+          if(!expiry){try{var rd=new Date(regDate);rd.setFullYear(rd.getFullYear()+1);expiry=rd.toISOString().split('T')[0];}catch(ex){expiry='';}}
+          var price=parseFloat(getCol(row,'price'))||0;
+          var nd={
+            id:String(Date.now())+String(Math.floor(Math.random()*1000000))+i,
+            domain:domain,
+            registrar:getCol(row,'registrar')||'',
+            locTz:locObj.tz,locName:locObj.n,
+            regDate:regDate,expiry:expiry,
+            category:getCol(row,'category')||'',
+            marketplace:getCol(row,'marketplace')||'',
+            listPrice:price,
+            priceHistory:price?[{price:price,date:toVal(new Date()),note:'Imported'}]:[],
+            sent:{p1email:'',p1fu1:'',p1fu2:'',p1fu3:'',p2email:'',p2fu1:'',p2fu2:'',p2fu3:'',p3email:'',p3fu1:'',p3fu2:'',p3fu3:'',pdfu1:'',pdfu2:'',pdfu3:''},
+            p1:{email:false,fu1:false,fu2:false,fu3:false},
+            p2:{email:false,fu1:false,fu2:false,fu3:false},
+            p3:{email:false,fu1:false,fu2:false,fu3:false},
+            pricedrop:{active:false,date:null,fu1:false,fu2:false,fu3:false},
+            emailLog:[],
+            status:'Not Contacted',sold:false,soldDate:'',soldPrice:0,
+            docName:'',notes:getCol(row,'notes')||'',
+            addedAt:toVal(new Date())
+          };
+          domains.unshift(nd);
+          imp++;log.push(domain+' - imported');
+        }catch(rowErr){skip++;log.push('Row '+(i+1)+' - error: '+rowErr.message);}
+      }
+      try{save();}catch(ex){}
+      try{renderDash();}catch(ex){}
+      try{scheduleAll();}catch(ex){}
+      try{scheduleAndroidReminders();}catch(ex){}
+      var resEl=document.getElementById('import-result');
+      if(resEl){
+        var statusClass=imp>0?'al-success':'al-warn';
+        var html='<div class="alert '+statusClass+'" style="margin-bottom:10px"><b>'+imp+' imported</b>, '+skip+' skipped</div>';
+        var shown=log.length>30?log.slice(0,30):log;
+        for(var j=0;j<shown.length;j++){html+='<div style="font-size:12px;padding:3px 0;border-bottom:1px solid var(--border);color:var(--text2)">'+shown[j]+'</div>';}
+        if(log.length>30)html+='<div style="font-size:12px;color:var(--text3);margin-top:4px">...and '+(log.length-30)+' more</div>';
+        resEl.innerHTML=html;
+      }
+      if(imp>0)toast(imp+' domain'+(imp!==1?'s':'')+' imported','success');
+      var fi=document.getElementById('file-inp');if(fi)fi.value='';
+    }catch(err){toast('Import failed: '+err.message,'warn');}
+  };
+  reader.onerror=function(){toast('Could not read file','warn');};
+  reader.readAsText(file);
+}
+function dlTemplate(){const c='domain,registrar,location,registration_date,expiry_date,category,marketplace,price,notes\nmybrand.com,GoDaddy,Texas,2024-01-15,2025-01-15,Tech,Afternic,2500,';const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(c);a.download='domain_tracker_template.csv';a.click();}
+function exportCSV(){
+  const h='domain,registrar,location,regDate,expiry,category,marketplace,listPrice,status,sold,soldDate,soldPrice,notes';
+  const rows=domains.map(d=>[d.domain,d.registrar,d.locName||'',d.regDate,d.expiry,d.category,d.marketplace,d.listPrice,d.status,d.sold,d.soldDate,d.soldPrice,d.notes].map(v=>'"'+(v===null||v===undefined?'':v)+'"').join(','));
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent([h,...rows].join('\n'));a.download='domain_portfolio.csv';a.click();
+}
+
+// ── BACKUP / RESTORE / EXPORT INTERESTS ──────────────────────────────────────
+function exportBackup(){
+  const data={version:1,exportedAt:new Date().toISOString(),domains,emailAccounts,interests};
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(data,null,2));
+  a.download=`dpp_backup_${toVal(new Date())}.json`;a.click();
+  toast('Backup downloaded','success');
+}
+
+function restoreBackup(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.domains||!Array.isArray(data.domains)){toast('Invalid backup file','error');return;}
+      const _doRestore=()=>{
+        domains=data.domains||[];
+        emailAccounts=data.emailAccounts||[];
+        interests=data.interests||[];
+        save();renderDash();
+        try{scheduleAndroidReminders();}catch(e){}
+        document.getElementById('restore-result').innerHTML=`<div class="alert al-success" style="margin-top:4px">Restored ${domains.length} domains, ${interests.length} interests, ${emailAccounts.length} email accounts.</div>`;
+        toast('Backup restored','success');
+      };
+      const modal=document.createElement('div');
+      modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.7);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+      modal.innerHTML=`<div style="background:var(--bg);border-radius:var(--r);padding:24px;max-width:360px;width:100%;box-shadow:var(--shadow-md)">
+        <div style="font-size:15px;font-weight:800;margin-bottom:8px;color:var(--text)">⚠️ Restore backup?</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:18px">This will <b>replace all current data</b> with ${data.domains.length} domains and ${(data.interests||[]).length} interests from the backup.</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" style="flex:1;background:var(--amber);border-color:var(--amber)" id="restore-confirm-btn">Restore</button>
+          <button class="btn" style="flex:1" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+        </div>
+      </div>`;
+      document.body.appendChild(modal);
+      document.getElementById('restore-confirm-btn').onclick=function(){_doRestore();modal.remove();};
+    }catch(err){toast('Could not parse backup file','error');document.getElementById('restore-result').innerHTML=`<div class="alert al-danger" style="margin-top:4px">Error: ${err.message}</div>`;}
+  };
+  reader.readAsText(file);
+  // Reset input so same file can be re-selected
+  document.getElementById('restore-inp').value='';
+}
+
+function exportInterestsCSV(){
+  if(!interests.length){toast('No interests to export','warn');return;}
+  const h='domain,email,notes,date,followUpDate,followUpDone,addedAt';
+  const rows=interests.map(i=>[i.domain,i.email,i.notes||'',i.date,i.followUp||'',i.followUpDone?'yes':'no',i.addedAt||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent([h,...rows].join('\n'));
+  a.download='domain_interests.csv';a.click();
+}
+
+// ── TOAST / NAV ───────────────────────────────────────────────────────────────
+function toast(msg,type='success'){
+  const t=document.getElementById('toast');t.textContent=msg;
+  t.style.background=type==='success'?'var(--green)':type==='warn'?'var(--amber)':'var(--red)';
+  t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);
+}
+function nav(p,btn){
+  document.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));
+  document.getElementById('pg-'+p).classList.add('on');
+  if(btn)btn.classList.add('on');
+  window.scrollTo(0,0);
+  if(p==='dashboard')renderDash();
+  if(p==='domains'){renderDomains();closeAllDets();}
+  if(p==='reminders')renderReminders();
+  if(p==='interests'){
+    populateInterestSelects();
+    const fuInp=document.getElementById('int-fu-date');
+    if(fuInp&&!fuInp.value) fuInp.value=toVal(addD(new Date(),2));
+    renderInterests();
+  }
+  if(p==='emails')renderEmailAccounts();
+}
+
+
+// ── CALENDAR & TIMEZONE INTEGRATION ──────────────────────────────────────────
+
+// Convert a JS Date + IANA timezone to a local wall-clock date string
+// Returns {year,month,day,hour,minute} in the target timezone
+function tzWallClock(dt, tz){
+  try{
+    const parts = new Intl.DateTimeFormat('en-US',{
+      timeZone: tz||'America/New_York',
+      year:'numeric',month:'2-digit',day:'2-digit',
+      hour:'2-digit',minute:'2-digit',hour12:false
+    }).formatToParts(dt);
+    const get = t => parts.find(p=>p.type===t).value;
+    return {
+      year: get('year'), month: get('month'), day: get('day'),
+      hour: get('hour')==='24'?'00':get('hour'), minute: get('minute')
+    };
+  }catch(e){
+    // fallback — use UTC
+    return {
+      year: String(dt.getUTCFullYear()),
+      month: String(dt.getUTCMonth()+1).padStart(2,'0'),
+      day: String(dt.getUTCDate()).padStart(2,'0'),
+      hour:'08', minute:'00'
+    };
+  }
+}
+
+// Format a date as ICS DTSTART with TZID — proper timezone-aware format
+// dt = JS Date, tz = IANA string, hour = wall-clock hour to fire (default 8am)
+function icsDateTime(dt, tz, hour){
+  hour = hour||8;
+  const wc = tzWallClock(dt, tz);
+  // Build local datetime string: YYYYMMDDTHHMMSS
+  const dtStr = wc.year + wc.month + wc.day + 'T' +
+    String(hour).padStart(2,'0') + '0000';
+  return {dtStr, tzid: tz||'America/New_York'};
+}
+
+// Escape ICS text values
+function icsEscape(s){
+  return (s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+}
+
+// Build a single ICS VEVENT string
+function buildICSEvent(opts){
+  // opts: {domain, label, dt, tz, description, uid}
+  const tz   = opts.tz||'America/New_York';
+  const {dtStr,tzid} = icsDateTime(opts.dt, tz, 8);
+  // End time = 1 hour after start
+  const endDt = new Date(opts.dt.getTime());
+  endDt.setHours(9,0,0,0);
+  const {dtStr:endStr} = icsDateTime(endDt, tz, 9);
+
+  const uid  = opts.uid||(Date.now()+Math.random().toString(36).slice(2))+'@domainpro';
+  const now  = new Date();
+  const stamp= now.getUTCFullYear()+
+    String(now.getUTCMonth()+1).padStart(2,'0')+
+    String(now.getUTCDate()).padStart(2,'0')+'T'+
+    String(now.getUTCHours()).padStart(2,'0')+
+    String(now.getUTCMinutes()).padStart(2,'0')+
+    String(now.getUTCSeconds()).padStart(2,'0')+'Z';
+
+  return [
+    'BEGIN:VEVENT',
+    'UID:'+ uid,
+    'DTSTAMP:'+ stamp,
+    'DTSTART;TZID='+ tzid +':'+ dtStr,
+    'DTEND;TZID='  + tzid +':'+ endStr,
+    'SUMMARY:'+ icsEscape('Follow up: '+ opts.domain),
+    'DESCRIPTION:'+ icsEscape(opts.description||opts.label||''),
+    'STATUS:CONFIRMED',
+    'BEGIN:VALARM',
+    'TRIGGER:-PT30M',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:Reminder',
+    'END:VALARM',
+    'END:VEVENT'
+  ].join('\r\n');
+}
+
+// Build full ICS file (one or many events)
+function buildICS(events){
+  const tzBlock = [
+    'BEGIN:VTIMEZONE',
+    'TZID:America/New_York',
+    'BEGIN:STANDARD',
+    'DTSTART:19671029T020000',
+    'RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10',
+    'TZNAME:EST',
+    'TZOFFSETFROM:-0400',
+    'TZOFFSETTO:-0500',
+    'END:STANDARD',
+    'BEGIN:DAYLIGHT',
+    'DTSTART:19870405T020000',
+    'RRULE:FREQ=YEARLY;BYDAY=2SU;BYMONTH=3',
+    'TZNAME:EDT',
+    'TZOFFSETFROM:-0500',
+    'TZOFFSETTO:-0400',
+    'END:DAYLIGHT',
+    'END:VTIMEZONE'
+  ].join('\r\n');
+
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Domain Portfolio Pro//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'X-WR-CALNAME:Domain Portfolio Pro',
+    'X-WR-TIMEZONE:America/New_York',
+    tzBlock,
+    ...events,
+    'END:VCALENDAR'
+  ].join('\r\n');
+}
+
+// Download ICS file
+function downloadICS(filename, icsContent){
+  const blob = new Blob([icsContent], {type:'text/calendar;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+// Build description string for a domain reminder
+function buildReminderDescription(r){
+  const d = domains.find(x=>x.domain===r.domain);
+  let desc = r.label + '\n';
+  desc += 'Domain: ' + r.domain + '\n';
+  if(r.tz)  desc += 'Timezone: ' + r.tz + '\n';
+  if(r.loc) desc += 'Location: ' + r.loc + '\n';
+  if(d){
+    if(d.registrar) desc += 'Registrar: ' + d.registrar + '\n';
+    if(d.listPrice) desc += 'Listed price: $' + d.listPrice.toLocaleString() + '\n';
+    if(d.notes)     desc += 'Notes: ' + d.notes + '\n';
+  }
+  // Attach interest info if this is an interest follow-up
+  if(r.isInterest && r.iid){
+    const it = interests.find(x=>x.id===r.iid);
+    if(it){
+      if(it.email) desc += 'Email: ' + it.email + '\n';
+      if(it.notes) desc += 'Interest notes: ' + it.notes + '\n';
+    }
+  }
+  return desc;
+}
+
+// Add single reminder to calendar — dt may be a Date object or ISO string
+function addReminderToCalendar(r){
+  if(typeof r.dt === 'string') r.dt = new Date(r.dt);
+  const desc  = buildReminderDescription(r);
+  const event = buildICSEvent({
+    domain: r.domain,
+    label:  r.label,
+    dt:     r.dt,
+    tz:     r.tz||'America/New_York',
+    description: desc,
+    uid: (r.domain+r.label+r.dt.getTime()).replace(/[^a-zA-Z0-9]/g,'')+'@dpp'
+  });
+  const ics = buildICS([event]);
+  const fname = 'reminder_'+r.domain.replace(/[^a-zA-Z0-9]/g,'_')+'_'+
+    (r.dt.getFullYear()+String(r.dt.getMonth()+1).padStart(2,'0')+String(r.dt.getDate()).padStart(2,'0'))+'.ics';
+  downloadICS(fname, ics);
+  toast('Calendar event downloaded — open the .ics file to add it','success');
+}
+
+// Add ALL upcoming (and overdue) reminders to one ICS file
+function downloadAllICS(){
+  const allItems=[];
+  domains.forEach(d=>{
+    if(d.sold)return;
+    const p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
+    const loc=d.locName||d.locTz||'Eastern';
+    [[p1.fu1,d.p1.fu1,'Phase 1 +3d FU'],[p1.fu2,d.p1.fu2,'Phase 1 +5d FU'],[p1.fu3,d.p1.fu3,'Phase 1 +7d FU'],
+     [p2.warn,false,'Phase 2 alert'],[p2.email,d.p2.email,'Phase 2 6-month email'],
+     [p2.fu1,d.p2.fu1,'Phase 2 +3d'],[p2.fu2,d.p2.fu2,'Phase 2 +5d'],[p2.fu3,d.p2.fu3,'Phase 2 +7d'],
+     [p3.warn30,false,'30-day expiry warning'],[p3.warn7,false,'7-day expiry warning'],
+     [p3.email,d.p3.email,'Phase 3 email'],[p3.fu1,d.p3.fu1,'Phase 3 +3d'],[p3.fu2,d.p3.fu2,'Phase 3 +5d'],[p3.fu3,d.p3.fu3,'Phase 3 +7d'],
+     ...(d.pricedrop&&d.pricedrop.active&&pdd.fu1?[[pdd.fu1,d.pricedrop.fu1,'PD +3d'],[pdd.fu2,d.pricedrop.fu2,'PD +5d'],[pdd.fu3,d.pricedrop.fu3,'PD +7d']]:[])
+    ].forEach(([dt,done,lbl])=>{
+      if(!dt||done)return;
+      allItems.push({domain:d.domain,label:lbl,dt,loc,tz:d.locTz,days:daysUntil(dt)});
+    });
+  });
+  interests.forEach(it=>{
+    if(!it.followUp||it.followUpDone)return;
+    const fuDt=pd(it.followUp);if(!fuDt)return;
+    allItems.push({domain:it.domain,label:'Interest follow-up ('+it.email+')',dt:fuDt,loc:'',tz:'',days:daysUntil(fuDt),isInterest:true,iid:it.id});
+  });
+  if(!allItems.length){toast('No reminders to export','warn');return;}
+  const events = allItems.map(r=>buildICSEvent({
+    domain:r.domain, label:r.label, dt:r.dt,
+    tz:r.tz||'America/New_York',
+    description:buildReminderDescription(r),
+    uid:(r.domain+r.label+r.dt.getTime()).replace(/[^a-zA-Z0-9]/g,'')+'@dpp'
+  }));
+  downloadICS('domain_portfolio_reminders.ics', buildICS(events));
+  toast(allItems.length+' reminder'+(allItems.length!==1?'s':'')+' exported to calendar','success');
+}
+
+// ── AUTO CALENDAR INTEGRATION ─────────────────────────────────────────────────
+// Permission stored in localStorage: 'dpp_cal_auto' = 'yes'|'no'
+var _calAutoEnabled = (function(){try{return localStorage.getItem('dpp_cal_auto')==='yes';}catch(e){return false;}})();
+var _calPromptShown = false;
+
+// Show one-time permission prompt — returns a Promise resolving to true/false
+function calAskPermission(){
+  return new Promise(function(resolve){
+    if(_calAutoEnabled){resolve(true);return;}
+    if(localStorage.getItem('dpp_cal_auto')==='no'){resolve(false);return;}
+    // Build modal overlay
+    var overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.7);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML=`
+      <div style="background:var(--bg);border-radius:var(--r);padding:26px 24px;max-width:380px;width:100%;box-shadow:var(--shadow-md)">
+        <div style="font-size:22px;margin-bottom:10px">📅</div>
+        <div style="font-size:16px;font-weight:800;margin-bottom:8px;color:var(--text)">Auto-add reminders to calendar?</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:18px">
+          When you add a domain or a reminder comes due, the app will automatically download a calendar event (.ics) so it lands in your calendar app.<br><br>
+          <span style="font-size:11px;color:var(--text3)">You only see this prompt once. You can change this in Settings.</span>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button id="cal-yes" class="btn btn-primary" style="flex:1">Yes, auto-add</button>
+          <button id="cal-no"  class="btn"             style="flex:1">No thanks</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    document.getElementById('cal-yes').onclick=function(){
+      localStorage.setItem('dpp_cal_auto','yes');
+      _calAutoEnabled=true;
+      document.body.removeChild(overlay);
+      resolve(true);
+    };
+    document.getElementById('cal-no').onclick=function(){
+      localStorage.setItem('dpp_cal_auto','no');
+      _calAutoEnabled=false;
+      document.body.removeChild(overlay);
+      resolve(false);
+    };
+  });
+}
+
+// Build all ICS events for a single domain (all phases)
+function buildDomainICSEvents(d){
+  if(!d||d.sold)return[];
+  var p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
+  var events=[];
+  var pairs=[
+    [p1.email,'Phase 1 — Initial email'],[p1.fu1,'Phase 1 — +3d follow-up'],
+    [p1.fu2,'Phase 1 — +5d follow-up'],[p1.fu3,'Phase 1 — +7d follow-up'],
+    [p2.warn,'Phase 2 — 10-day heads-up'],[p2.email,'Phase 2 — 6-month email'],
+    [p2.fu1,'Phase 2 — +3d FU'],[p2.fu2,'Phase 2 — +5d FU'],[p2.fu3,'Phase 2 — +7d FU'],
+    [p3.warn30,'Expiry warning — 30 days left'],[p3.warn7,'Expiry warning — 7 days left'],
+    [p3.email,'Phase 3 — pre-expiry email'],
+    [p3.fu1,'Phase 3 — +3d FU'],[p3.fu2,'Phase 3 — +5d FU'],[p3.fu3,'Phase 3 — +7d FU']
+  ];
+  if(d.pricedrop&&d.pricedrop.active&&pdd.fu1){
+    pairs.push([pdd.fu1,'Price-drop +3d FU'],[pdd.fu2,'Price-drop +5d FU'],[pdd.fu3,'Price-drop +7d FU']);
+  }
+  pairs.forEach(function(pair){
+    var dt=pair[0],lbl=pair[1];
+    if(!dt)return;
+    var desc='Domain: '+d.domain+'\nReminder: '+lbl;
+    if(d.registrar) desc+='\nRegistrar: '+d.registrar;
+    if(d.listPrice)  desc+='\nListed: $'+d.listPrice.toLocaleString();
+    if(d.notes)      desc+='\nNotes: '+d.notes;
+    events.push(buildICSEvent({
+      domain:d.domain,label:lbl,dt:dt,
+      tz:d.locTz||'America/New_York',
+      description:desc,
+      uid:(d.domain+lbl+dt.getTime()).replace(/[^a-zA-Z0-9]/g,'')+'@dpp'
+    }));
+  });
+  return events;
+}
+
+// Auto-export all reminders for a domain on add
+function autoCalOnAdd(d){
+  calAskPermission().then(function(allowed){
+    if(!allowed)return;
+    var events=buildDomainICSEvents(d);
+    if(!events.length)return;
+    var fname='reminders_'+d.domain.replace(/[^a-zA-Z0-9]/g,'_')+'.ics';
+    downloadICS(fname,buildICS(events));
+    toast('📅 '+events.length+' reminders added to calendar for '+d.domain,'success');
+  });
+}
+
+// Auto-export any reminders that are due TODAY — called on app load
+function autoCalOnDue(){
+  if(!_calAutoEnabled)return;  // only if already granted — no prompt on load
+  var dueItems=[];
+  domains.forEach(function(d){
+    if(d.sold)return;
+    var p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
+    var tz=d.locTz||'America/New_York';
+    var loc=d.locName||d.locTz||'';
+    [
+      [p1.email,d.p1.email,'Phase 1 — initial email'],
+      [p1.fu1,d.p1.fu1,'Phase 1 — +3d follow-up'],
+      [p1.fu2,d.p1.fu2,'Phase 1 — +5d follow-up'],
+      [p1.fu3,d.p1.fu3,'Phase 1 — +7d follow-up'],
+      [p2.warn,false,'Phase 2 — 10-day heads-up'],
+      [p2.email,d.p2.email,'Phase 2 — 6-month email'],
+      [p2.fu1,d.p2.fu1,'Phase 2 — +3d FU'],
+      [p2.fu2,d.p2.fu2,'Phase 2 — +5d FU'],
+      [p2.fu3,d.p2.fu3,'Phase 2 — +7d FU'],
+      [p3.warn30,false,'Expiry warning — 30 days left'],
+      [p3.warn7,false,'Expiry warning — 7 days left'],
+      [p3.email,d.p3.email,'Phase 3 — pre-expiry email'],
+      [p3.fu1,d.p3.fu1,'Phase 3 — +3d FU'],
+      [p3.fu2,d.p3.fu2,'Phase 3 — +5d FU'],
+      [p3.fu3,d.p3.fu3,'Phase 3 — +7d FU'],
+    ].forEach(function(row){
+      var dt=row[0],done=row[1],lbl=row[2];
+      if(!dt||done)return;
+      if(!isToday(dt))return;
+      // Check not already exported today
+      var key='dpp_cal_exported_'+d.domain+'_'+lbl+'_'+toVal(dt);
+      if(localStorage.getItem(key))return;
+      dueItems.push({domain:d.domain,label:lbl,dt:dt,tz:tz,loc:loc,d:d,key:key});
+    });
+    // Interest follow-ups due today
+    interests.forEach(function(it){
+      if(!it.followUp||it.followUpDone)return;
+      var fuDt=pd(it.followUp);
+      if(!fuDt||!isToday(fuDt))return;
+      var key='dpp_cal_exported_int_'+it.id+'_'+it.followUp;
+      if(localStorage.getItem(key))return;
+      dueItems.push({domain:it.domain,label:'Interest follow-up ('+it.email+')',dt:fuDt,tz:'',loc:'',isInterest:true,iid:it.id,key:key});
+    });
+  });
+  if(!dueItems.length)return;
+  // Small delay so app fully loads first
+  setTimeout(function(){
+    var events=dueItems.map(function(r){
+      var desc='Domain: '+r.domain+'\nReminder: '+r.label;
+      if(r.d&&r.d.registrar) desc+='\nRegistrar: '+r.d.registrar;
+      if(r.d&&r.d.notes)     desc+='\nNotes: '+r.d.notes;
+      return buildICSEvent({
+        domain:r.domain,label:r.label,dt:r.dt,
+        tz:r.tz||'America/New_York',description:desc,
+        uid:(r.domain+r.label+r.dt.getTime()).replace(/[^a-zA-Z0-9]/g,'')+'@dpp'
+      });
+    });
+    downloadICS('due_today_reminders.ics',buildICS(events));
+    // Mark each as exported so we don't re-download on next open today
+    dueItems.forEach(function(r){localStorage.setItem(r.key,'1');});
+    toast('📅 '+dueItems.length+' due-today reminder'+(dueItems.length!==1?'s':'')+' added to calendar','success');
+  },1500);
+}
+
+function getAt8am(dt,tz){try{var dateStr=dt instanceof Date?dt.toISOString().slice(0,10):String(dt).slice(0,10);var at8=new Date(dateStr+'T08:00:00');if(tz){try{var tzDate=new Date(new Date(dateStr+'T08:00:00').toLocaleString('en-US',{timeZone:tz}));var offset=at8.getTime()-tzDate.getTime();at8=new Date(at8.getTime()+offset);}catch(e){}}return at8;}catch(e){return dt instanceof Date?dt:new Date(dt);}}
+function getAt8amTz(dt,tz){
+  try{
+    var d=dt instanceof Date?dt:new Date(dt);
+    var dateStr=d.toLocaleDateString('en-CA',{timeZone:tz||'America/New_York'});
+    // Find what UTC ms value corresponds to 8am wall-clock in the target timezone
+    var localStr=dateStr+'T08:00:00';
+    var probe=new Date(localStr);
+    var utcStr=probe.toLocaleString('en-US',{timeZone:tz||'America/New_York',hour12:false});
+    var utcProbe=new Date(utcStr);
+    var offset=probe.getTime()-utcProbe.getTime();
+    return new Date(probe.getTime()+offset);
+  }catch(e){
+    var d2=dt instanceof Date?dt:new Date(dt);
+    d2.setHours(8,0,0,0);
+    return d2;
+  }
+}
+function getAt6amNigeria(dt){
+  try{
+    var d=dt instanceof Date?dt:new Date(dt);
+    var dateStr=d.toLocaleDateString('en-CA',{timeZone:'Africa/Lagos'});
+    var localStr=dateStr+'T06:00:00';
+    var probe=new Date(localStr);
+    var utcStr=probe.toLocaleString('en-US',{timeZone:'Africa/Lagos',hour12:false});
+    var utcProbe=new Date(utcStr);
+    var offset=probe.getTime()-utcProbe.getTime();
+    return new Date(probe.getTime()+offset);
+  }catch(e){
+    var d2=dt instanceof Date?dt:new Date(dt);
+    d2.setHours(5,0,0,0);// fallback: 5am UTC ≈ 6am Lagos
+    return d2;
+  }
+}
+function scheduleAndroidReminders(){if(typeof AndroidNotify==='undefined')return;var reminders=[];var idCounter=1000;domains.forEach(function(d){if(d.sold)return;var p1=getP1(d),p2=getP2(d),p3=getP3(d);var tz=d.locTz||'America/New_York';var pairs=[[p1.email,'Phase 1 - Initial email for '+d.domain],[p1.fu1,'Phase 1 - +3d follow-up for '+d.domain],[p1.fu2,'Phase 1 - +5d follow-up for '+d.domain],[p1.fu3,'Phase 1 - +7d follow-up for '+d.domain],[p2.email,'Phase 2 - 6-month email for '+d.domain],[p2.fu1,'Phase 2 - +3d FU for '+d.domain],[p2.fu2,'Phase 2 - +5d FU for '+d.domain],[p2.fu3,'Phase 2 - +7d FU for '+d.domain],[p3.warn30,'WARNING: '+d.domain+' expires in 30 days!'],[p3.warn7,'URGENT: '+d.domain+' expires in 7 days!'],[p3.email,'Phase 3 - pre-expiry email for '+d.domain],[p3.fu1,'Phase 3 - +3d FU for '+d.domain],[p3.fu2,'Phase 3 - +5d FU for '+d.domain],[p3.fu3,'Phase 3 - +7d FU for '+d.domain]];pairs.forEach(function(pair){var dt=pair[0],lbl=pair[1];if(!dt)return;var ms8am=getAt8amTz(dt,tz).getTime();if(!isNaN(ms8am)&&ms8am>Date.now()){reminders.push({id:idCounter++,title:'Domain Portfolio Pro - Reminder',body:lbl,triggerMs:ms8am});}var ms6am=getAt6amNigeria(dt).getTime();if(!isNaN(ms6am)&&ms6am>Date.now()){reminders.push({id:idCounter++,title:'Domain Portfolio Pro - Today',body:'Today: '+lbl,triggerMs:ms6am});}});});interests.forEach(function(it){if(!it.followUp||it.followUpDone)return;var fuDt=pd(it.followUp);if(!fuDt)return;var ms8am=getAt8amTz(fuDt,'America/New_York').getTime();if(!isNaN(ms8am)&&ms8am>Date.now()){reminders.push({id:idCounter++,title:'Domain Portfolio Pro - Reminder',body:'Interest follow-up for '+it.domain+' ('+it.email+')',triggerMs:ms8am});}var ms6am=getAt6amNigeria(fuDt).getTime();if(!isNaN(ms6am)&&ms6am>Date.now()){reminders.push({id:idCounter++,title:'Domain Portfolio Pro - Today',body:'Today: Interest follow-up for '+it.domain,triggerMs:ms6am});}});if(reminders.length>0){AndroidNotify.scheduleReminders(JSON.stringify(reminders));}}
+
+// ── SIDE DRAWER ──
+function openDrawer(){
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+  renderDrawerMenu();
+  renderDrawerCategories();
+}
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+function drawerNav(page){
+  closeDrawer();
+  var btns=document.querySelectorAll('.nb');
+  var btn=null;
+  btns.forEach(function(b){ if(b.getAttribute('onclick') && b.getAttribute('onclick').indexOf("'"+page+"'")>-1) btn=b; });
+  nav(page,btn);
+}
+function toggleSection(id){
+  var items=document.getElementById('sec-'+id);
+  var hdr=items.previousElementSibling;
+  var isCollapsed=hdr.classList.contains('collapsed');
+  if(isCollapsed){
+    items.style.maxHeight=items.scrollHeight+'px';
+    hdr.classList.remove('collapsed');
+  } else {
+    items.style.maxHeight='0px';
+    hdr.classList.add('collapsed');
+  }
+}
+// ── EDITABLE MENU (localStorage) ──
+var DEFAULT_MENU_ITEMS = [
+  {icon:'📊', label:'Dashboard',     page:'dashboard'},
+  {icon:'➕', label:'Add Domain',    page:'add'},
+  {icon:'🌐', label:'My Domains',    page:'domains'},
+  {icon:'🔔', label:'Reminders',     page:'reminders'},
+  {icon:'💬', label:'Interests',     page:'interests'},
+  {icon:'📥', label:'Bulk Import',   page:'import'},
+  {icon:'✉️', label:'Email Accounts',page:'emails'}
+];
+
+function loadMenuItems(){
+  try{
+    var stored=localStorage.getItem('dpp_menu_items');
+    if(stored) return JSON.parse(stored);
+  }catch(e){}
+  return DEFAULT_MENU_ITEMS.map(function(m){return Object.assign({},m);});
+}
+
+function saveMenuItems(items){
+  localStorage.setItem('dpp_menu_items',JSON.stringify(items));
+}
+
+function renderDrawerMenu(){
+  var items=loadMenuItems();
+  var el=document.getElementById('drawer-menu-items');
+  if(!el) return;
+  var due=getAllDue().length;
+  var activeInt=interests.filter(function(i){return !i.followUpDone&&i.followUp&&daysUntil(pd(i.followUp))>=0;}).length;
+  var html='';
+  items.forEach(function(item,idx){
+    var badge='';
+    if(item.page==='domains') badge='<span class="drawer-item-badge" style="margin-left:auto">'+domains.length+'</span>';
+    if(item.page==='reminders'&&due>0) badge='<span class="drawer-item-badge warn" style="margin-left:auto">'+due+'</span>';
+    if(item.page==='interests'&&activeInt>0) badge='<span class="drawer-item-badge" style="margin-left:auto">'+activeInt+'</span>';
+    html+='<div class="drawer-item" onclick="drawerNav(\''+item.page+'\')" style="position:relative">';
+    html+='<div class="drawer-item-icon">'+item.icon+'</div>';
+    html+='<span style="flex:1">'+item.label+'</span>';
+    html+=badge;
+    html+='<span class="drawer-item-edit">';
+    html+='<button class="menu-edit-btn" onclick="event.stopPropagation();editMenuItem('+idx+')" title="Edit">✏️</button>';
+    html+='<button class="menu-edit-btn" onclick="event.stopPropagation();deleteMenuItem('+idx+')" title="Delete">🗑️</button>';
+    html+='</span>';
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
+
+function addMenuItemPrompt(){
+  closeDrawer();
+  showMenuModal(-1,{icon:'🔗',label:'',page:'dashboard'});
+}
+
+function editMenuItem(idx){
+  closeDrawer();
+  var items=loadMenuItems();
+  if(!items[idx]) return;
+  showMenuModal(idx,items[idx]);
+}
+
+function deleteMenuItem(idx){
+  var items=loadMenuItems();
+  if(!items[idx])return;
+  var label=items[idx].label;
+  var modal=document.createElement('div');
+  modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.7);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML='<div style="background:var(--bg);border-radius:var(--r);padding:24px;max-width:320px;width:100%;box-shadow:var(--shadow-md)">'
+    +'<div style="font-size:15px;font-weight:800;margin-bottom:8px;color:var(--text)">Remove menu item?</div>'
+    +'<div style="font-size:13px;color:var(--text2);margin-bottom:18px">'+label+'</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="btn btn-primary" style="flex:1;background:var(--red);border-color:var(--red)" id="del-menu-confirm">Remove</button>'
+    +'<button class="btn" style="flex:1" onclick="this.closest(\'[style*=fixed]\').remove()">Cancel</button>'
+    +'</div></div>';
+  document.body.appendChild(modal);
+  document.getElementById('del-menu-confirm').onclick=function(){
+    var items2=loadMenuItems();
+    items2.splice(idx,1);
+    saveMenuItems(items2);
+    modal.remove();
+    renderDrawerMenu();
+    openDrawer();
+  };
+}
+
+function showMenuModal(editIdx,current){
+  var pages=[
+    {id:'dashboard',label:'Dashboard'},{id:'add',label:'Add Domain'},
+    {id:'domains',label:'My Domains'},{id:'reminders',label:'Reminders'},
+    {id:'interests',label:'Interests'},{id:'import',label:'Bulk Import'},
+    {id:'emails',label:'Email Accounts'}
+  ];
+  var pageOpts=pages.map(function(p){
+    return '<option value="'+p.id+'"'+(p.id===current.page?' selected':'')+'>'+p.label+'</option>';
+  }).join('');
+  var modal=document.createElement('div');
+  modal.className='menu-modal';
+  modal.id='menu-modal';
+  modal.innerHTML='<div class="menu-modal-box">'
+    +'<h3>'+(editIdx===-1?'Add Menu Item':'Edit Menu Item')+'</h3>'
+    +'<label>Icon (emoji)</label>'
+    +'<input type="text" id="mm-icon" value="'+current.icon+'" maxlength="4" style="width:80px;margin-bottom:10px">'
+    +'<label>Label</label>'
+    +'<input type="text" id="mm-label" value="'+current.label+'" placeholder="Menu item name" style="margin-bottom:10px">'
+    +'<label>Target Page</label>'
+    +'<select id="mm-page" style="margin-bottom:16px">'+pageOpts+'</select>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="btn btn-primary btn-sm" style="flex:1" onclick="saveMenuModal('+editIdx+')">'+(editIdx===-1?'Add':'Save')+'</button>'
+    +'<button class="btn btn-sm" style="flex:1" onclick="closeMenuModal()">Cancel</button>'
+    +'</div></div>';
+  document.body.appendChild(modal);
+}
+
+function saveMenuModal(editIdx){
+  var icon=document.getElementById('mm-icon').value.trim()||'🔗';
+  var label=document.getElementById('mm-label').value.trim();
+  var page=document.getElementById('mm-page').value;
+  if(!label){toast('Label required','warn');return;}
+  var items=loadMenuItems();
+  if(editIdx===-1){
+    items.push({icon,label,page});
+  } else {
+    items[editIdx]={icon,label,page};
+  }
+  saveMenuItems(items);
+  closeMenuModal();
+  renderDrawerMenu();
+  openDrawer();
+}
+
+function closeMenuModal(){
+  var el=document.getElementById('menu-modal');
+  if(el) el.parentNode.removeChild(el);
+}
+
+
+function initDrawerSections(){
+  document.querySelectorAll('.drawer-section-items').forEach(function(el){
+    el.style.maxHeight=el.scrollHeight+'px';
+  });
+}
+function updateDrawerStats(){
+  var total=domains.length;
+  var due=getAllDue().length;
+  var activeInt=interests.filter(function(i){return !i.followUpDone&&i.followUp&&daysUntil(pd(i.followUp))>=0;}).length;
+  document.getElementById('dr-total').textContent=total;
+  var dueEl=document.getElementById('dr-due');
+  if(due>0){dueEl.textContent=due;dueEl.style.display='';}else{dueEl.style.display='none';}
+  var intEl=document.getElementById('dr-int');
+  if(activeInt>0){intEl.textContent=activeInt;intEl.style.display='';}else{intEl.style.display='none';}
+}
+function renderDrawerCategories(){
+  var cats={};
+  var catOrder=['Tech','Branding','Finance','Geo Domains','Other'];
+  domains.forEach(function(d){
+    var c=d.category||'Other';
+    cats[c]=(cats[c]||0)+1;
+  });
+  var html='';
+  catOrder.forEach(function(c){
+    if(cats[c]){
+      html+='<div class="drawer-cat-item" onclick="filterByCategory(this)">'+
+        '<span class="drawer-cat-name" data-cat="'+c+'">'+c+'</span>'+
+        '<span class="drawer-cat-count">'+cats[c]+'</span></div>';
+    }
+  });
+  Object.keys(cats).forEach(function(c){
+    if(catOrder.indexOf(c)===-1&&cats[c]){
+      html+='<div class="drawer-cat-item" onclick="filterByCategory(this)">'+
+        '<span class="drawer-cat-name" data-cat="'+c+'">'+c+'</span>'+
+        '<span class="drawer-cat-count">'+cats[c]+'</span></div>';
+    }
+  });
+  if(!html) html='<div style="padding:8px 20px 8px 48px;font-size:12px;color:var(--text3)">No categories yet</div>';
+  document.getElementById('drawer-cats-list').innerHTML=html;
+  var sec=document.getElementById('sec-cats');
+  if(!sec.previousElementSibling.classList.contains('collapsed')){
+    sec.style.maxHeight='none';
+  }
+}
+function filterByCategory(el){
+  var cat=el.querySelector('.drawer-cat-name').getAttribute('data-cat');
+  closeDrawer();
+  var btn=null;
+  document.querySelectorAll('.nb').forEach(function(b){
+    if(b.getAttribute('onclick')&&b.getAttribute('onclick').indexOf("'domains'")>-1) btn=b;
+  });
+  nav('domains',btn);
+  // Apply category filter after nav renders the page
+  setTimeout(function(){
+    var catSel=document.getElementById('s-cat');
+    if(catSel){catSel.value=cat;renderDomains();}
+  },50);
+}
+function toggleTheme(){
+  var toggle=document.getElementById('theme-toggle');
+  toggle.classList.toggle('on');
+  if(toggle.classList.contains('on')){
+    document.documentElement.setAttribute('data-theme','dark');
+    localStorage.setItem('dpp_theme','dark');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('dpp_theme','light');
+  }
+}
+function showTzPicker(){
+  var current=localStorage.getItem('dpp_user_tz')||'Africa/Lagos';
+  var modal=document.createElement('div');
+  modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.7);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`
+    <div style="background:var(--bg);border-radius:var(--r);padding:24px;max-width:360px;width:100%;box-shadow:var(--shadow-md)">
+      <div style="font-size:15px;font-weight:800;margin-bottom:4px;color:var(--text)">🌍 Default Timezone</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Enter an IANA timezone, e.g. Africa/Lagos or America/New_York</div>
+      <input id="tz-modal-inp" type="text" value="${current}" placeholder="Africa/Lagos"
+        style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:14px">
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" style="flex:1" onclick="saveTzModal()">Save</button>
+        <button class="btn" style="flex:1" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  var inp=document.getElementById('tz-modal-inp');
+  inp.focus();inp.select();
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter')saveTzModal();if(e.key==='Escape')modal.remove();});
+}
+function saveTzModal(){
+  var inp=document.getElementById('tz-modal-inp');
+  if(!inp)return;
+  var tz=inp.value.trim()||'Africa/Lagos';
+  localStorage.setItem('dpp_user_tz',tz);
+  var el=document.getElementById('dr-tz');
+  if(el)el.textContent=tz.split('/')[1]||tz;
+  var modal=inp.closest('[style*=fixed]');
+  if(modal)modal.remove();
+  toast('Timezone updated to '+tz,'success');
+}
+function showAbout(){
+  alert('Domain Portfolio Pro\nVersion 1.0\nBuilt for serious domain investors.');
+}
+
+// ── AUTO EXPIRY DATE ──
+function autoSetExpiry(){
+  var regVal=document.getElementById('f-regdate').value;
+  if(!regVal)return;
+  var expiryEl=document.getElementById('f-expiry');
+  if(expiryEl.value)return; // don't override manual entry
+  var d=new Date(regVal+'T12:00:00'); // noon avoids DST midnight edge cases
+  var nextYear=d.getFullYear()+1;
+  var m=d.getMonth(); // 0-indexed
+  var day=d.getDate();
+  // Feb 29 guard: if target year is not a leap year, clamp to Feb 28
+  if(m===1&&day===29&&new Date(nextYear,1,29).getDate()!==29) day=28;
+  var exp=new Date(nextYear,m,day);
+  expiryEl.value=toVal(exp);
+}
+
+// Called from each bulk row's reg date input — only fills expiry if user hasn't set it
+function autoSetBulkExpiry(i){
+  var regEl=document.getElementById('br-reg-'+i);
+  var expEl=document.getElementById('br-exp-'+i);
+  if(!regEl||!expEl)return;
+  var regVal=regEl.value;
+  if(!regVal)return;
+  if(expEl.dataset.manuallySet==='1')return; // respect manual edits
+  var d=new Date(regVal+'T12:00:00');
+  var nextYear=d.getFullYear()+1;
+  var m=d.getMonth();
+  var day=d.getDate();
+  if(m===1&&day===29&&new Date(nextYear,1,29).getDate()!==29) day=28;
+  expEl.value=toVal(new Date(nextYear,m,day));
+}
+
+// ── EXIT APP ──
+function exitApp(){
+  closeDrawer();
+  // Primary bridge — matches addJavascriptInterface(new AppBridge(), "AppBridge") in Android
+  try{if(window.AppBridge&&typeof window.AppBridge.exitApp==='function'){window.AppBridge.exitApp();return;}}catch(e){}
+  // Legacy fallback bridge names
+  try{if(window.Android&&typeof window.Android.exitApp==='function'){window.Android.exitApp();return;}}catch(e){}
+  try{if(window.AndroidInterface&&typeof window.AndroidInterface.exitApp==='function'){window.AndroidInterface.exitApp();return;}}catch(e){}
+  // Custom scheme fallback
+  try{window.location.href='app://exit';}catch(e){}
+  try{window.close();}catch(e){}
+  setTimeout(function(){toast('Press your device back button to exit','info');},300);
+}
+
+// ── BACK BUTTON HANDLER ──
+// Called from Android onBackPressed() via AppBridge.onBackPressed()
+function handleBackButton(){
+  // 1. Close any open modal overlay
+  var modals=document.querySelectorAll('[style*="position:fixed"]');
+  for(var i=modals.length-1;i>=0;i--){
+    var m=modals[i];
+    if(m.id==='ptr-bar'||m.id==='toast') continue;
+    if(parseInt(m.style.zIndex||0)>=200){
+      try{m.parentNode.removeChild(m);}catch(e){m.style.display='none';}
+      return true;
+    }
+  }
+  // 2. Close side drawer if open
+  var drawer=document.getElementById('drawer');
+  if(drawer&&drawer.classList.contains('open')){closeDrawer();return true;}
+  // 3. Collapse expanded domain row
+  if(typeof _expandedDomain!=='undefined'&&_expandedDomain){
+    _expandedDomain=null;renderDomains();return true;
+  }
+  // 4. Navigate back to dashboard if on another page
+  var dashPg=document.getElementById('pg-dashboard');
+  if(dashPg&&!dashPg.classList.contains('on')){
+    var dashBtn=null;
+    document.querySelectorAll('.nb').forEach(function(b){
+      if(b.getAttribute('onclick')&&b.getAttribute('onclick').indexOf("'dashboard'")>-1) dashBtn=b;
+    });
+    nav('dashboard',dashBtn);
+    return true;
+  }
+  // 5. Already on dashboard — let Android handle (exit confirmation)
+  return false;
+}
+window.onAndroidBack=handleBackButton;
+
+// ── PULL TO REFRESH ──
+(function(){
+  var startY=0, pulling=false, threshold=70;
+  var bar=document.getElementById('ptr-bar');
+  document.addEventListener('touchstart',function(e){
+    if(window.scrollY===0) startY=e.touches[0].clientY;
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(!startY) return;
+    var dy=e.touches[0].clientY - startY;
+    if(dy>20 && window.scrollY===0){
+      pulling=true;
+      var pct=Math.min(dy/threshold,1);
+      bar.style.height=(pct*52)+'px';
+      bar.textContent=dy>threshold?'↑ Release to refresh…':'↓ Pull to refresh…';
+    }
+  },{passive:true});
+  document.addEventListener('touchend',function(){
+    if(pulling){
+      var h=parseFloat(bar.style.height)||0;
+      if(h>=threshold*0.9){
+        bar.classList.add('show');
+        bar.textContent='Refreshing…';
+        setTimeout(function(){ location.reload(); },600);
+      } else {
+        bar.style.height='0';
+      }
+    }
+    startY=0; pulling=false;
+  });
+})();
+
+// ── COMPACT LIST VIEW for My Domains ──
+var _expandedDomain = null;
+
+function renderDomainsAsList(list){
+  var el = document.getElementById('domain-list');
+  if(!list.length){ el.innerHTML='<div class="empty">No domains found</div>'; return; }
+  var html='<div class="dlist-container">';
+  list.forEach(function(d){
+    var expDt=pd(d.expiry), expDays=daysUntil(expDt);
+    var isExpired=expDays!==null&&expDays<0&&!d.sold;
+    var statusColor=d.sold?'var(--teal)':isExpired?'var(--red)':expDays!==null&&expDays<=7?'var(--red)':expDays!==null&&expDays<=30?'var(--amber)':'var(--green)';
+    var statusLabel=d.sold?'Sold':isExpired?'Expired':d.status||'Active';
+    var phase='—';
+    if(d.p3&&d.p3.email) phase='P3';
+    else if(d.p2&&d.p2.email) phase='P2';
+    else if(d.p1&&d.p1.email) phase='P1';
+    var isExp = _expandedDomain===d.domain;
+    var safeId = d.domain.replace(/[^a-zA-Z0-9]/g,'_');
+    html+='<div class="dlist-row'+(isExp?' expanded':'')+'" data-domain="'+safeId+'" onclick="toggleDomainRow(this)">';
+    html+='<div style="width:4px;align-self:stretch;border-radius:2px;background:'+statusColor+';flex-shrink:0;min-height:44px"></div>';
+    html+='<div class="dlist-left">';
+    html+='<div class="dlist-name">'+d.domain+'</div>';
+    html+='<div class="dlist-meta">';
+    if(d.registrar) html+='<span>'+d.registrar+'</span><span style="color:var(--border2)">·</span>';
+    if(d.locName) html+='<span>'+d.locName+'</span><span style="color:var(--border2)">·</span>';
+    html+='<span>'+phase+'</span>';
+    if(d.listPrice) html+='<span style="color:var(--border2)">·</span><span>$'+Number(d.listPrice).toLocaleString()+'</span>';
+    html+='</div></div>';
+    html+='<div class="dlist-right">';
+    html+='<span class="badge" style="background:transparent;border:1px solid '+statusColor+';color:'+statusColor+';font-size:10px">'+statusLabel+'</span>';
+    html+='<span class="dlist-arr" style="font-size:12px;color:var(--text3);transition:transform .2s;display:inline-block;'+(isExp?'transform:rotate(180deg)':'')+'">▾</span>';
+    html+='</div></div>';
+    html+='<div class="dlist-detail'+(isExp?' open':'')+'" id="ddet-'+safeId+'">';
+    if(isExp) html+=renderCard(d);
+    html+='</div>';
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function toggleDomainRow(rowEl){
+  var safeId = rowEl.getAttribute('data-domain');
+  // Find actual domain from domains array
+  var actualDomain = null;
+  domains.forEach(function(d){
+    if(d.domain.replace(/[^a-zA-Z0-9]/g,'_')===safeId) actualDomain=d.domain;
+  });
+  if(!actualDomain) return;
+  if(_expandedDomain===actualDomain){
+    _expandedDomain=null;
+  } else {
+    _expandedDomain=actualDomain;
+  }
+  var q=(document.getElementById('s-q').value||'').toLowerCase();
+  var fs=document.getElementById('s-status').value;
+  var fp=document.getElementById('s-phase').value;
+  var fi=document.getElementById('s-interest').value;
+  var fo=document.getElementById('s-overdue').value;
+  var fc=document.getElementById('s-cat')?document.getElementById('s-cat').value:'';
+  var list=domains.filter(function(d){
+    if(q&&!d.domain.toLowerCase().includes(q)) return false;
+    if(fs){
+      var expDt=pd(d.expiry);
+      var s=d.sold?'Sold':(expDt&&daysUntil(expDt)<0&&!d.sold)?'Expired':d.status;
+      if(s!==fs) return false;
+    }
+    if(fp){
+      var p1=getP1(d),p2=getP2(d),p3=getP3(d);
+      if(fp==='1'&&!p1.email) return false;
+      if(fp==='2'&&!p2.email) return false;
+      if(fp==='3'&&!p3.email) return false;
+    }
+    if(fi){
+      var hasInt=interests.some(function(i){return i.domain===d.domain;});
+      if(fi==='yes'&&!hasInt) return false;
+      if(fi==='no'&&hasInt) return false;
+    }
+    if(fo==='overdue'){
+      var p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
+      var hasOv=[p1.fu1,p1.fu2,p1.fu3,p2.email,p2.fu1,p2.fu2,p2.fu3,p3.email,p3.fu1,p3.fu2,p3.fu3].some(function(dt){return dt&&isPast(dt)&&!isToday(dt);});
+      var hasIntOv=interests.some(function(i){return i.domain===d.domain&&!i.followUpDone&&i.followUp&&daysUntil(pd(i.followUp))<0;});
+      if(!hasOv&&!hasIntOv) return false;
+    }
+    if(fc&&(d.category||'')!==fc) return false;
+    return true;
+  });
+  renderDomainsAsList(list);
+}
+
+try{setTimeout(scheduleAndroidReminders,2000);}catch(e){}
+// ── EDITABLE PROFILE NAME ─────────────────────────────────────────────────────
+function editProfile(){
+  const current = localStorage.getItem('dpp_profile_name')||'Domain Investor';
+  const modal = document.createElement('div');
+  modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.7);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`
+    <div style="background:var(--bg);border-radius:var(--r);padding:24px;max-width:360px;width:100%;box-shadow:var(--shadow-md)">
+      <div style="font-size:16px;font-weight:800;margin-bottom:4px;color:var(--text)">Edit your name</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px">This shows in the dashboard greeting</div>
+      <input id="profile-name-inp" type="text" value="${current}" placeholder="Your name" maxlength="40"
+        style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:14px">
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" style="flex:1" onclick="saveProfile()">Save</button>
+        <button class="btn" style="flex:1" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  const inp = document.getElementById('profile-name-inp');
+  inp.focus();inp.select();
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter')saveProfile();if(e.key==='Escape')modal.remove();});
+}
+function saveProfile(){
+  var inp=document.getElementById("profile-name-inp");
+  if(!inp)return;
+  var name=inp.value.trim()||"Domain Investor";
+  try{localStorage.setItem("dpp_profile_name",name);}catch(e){}
+  // Update dashboard greeting
+  var h=new Date().getHours();
+  var g=h<12?"Good morning":h<17?"Good afternoon":"Good evening";
+  var el=document.getElementById("dash-greeting");
+  if(el)el.textContent=g+', '+name+'! \uD83D\uDC4B';
+  // Update sidebar name
+  var sn=document.getElementById('drawer-name');
+  if(sn)sn.textContent=name;
+  // Update avatar initials
+  var av=document.getElementById('drawer-avatar');
+  if(av){var parts=name.trim().split(/\s+/);av.textContent=parts.length>1?(parts[0][0]+parts[1][0]).toUpperCase():name.substring(0,2).toUpperCase();}
+  // Close modal
+  var modal=inp.closest("[style*=fixed]");
+  if(modal)modal.remove();
+  toast("Name updated: "+name,"success");
+}
+
+// ── CLEANUP STALE CALENDAR EXPORT MARKERS ────────────────────────────────────
+// Removes dpp_cal_exported_* keys older than 2 days to prevent localStorage bloat
+try{(function(){
+  var prefix='dpp_cal_exported_';
+  var cutoff=toVal(addD(new Date(),-2));
+  Object.keys(localStorage).filter(function(k){return k.indexOf(prefix)===0;}).forEach(function(k){
+    // Key format ends in YYYY-MM-DD — compare suffix
+    var datePart=k.slice(k.lastIndexOf('_')+1);
+    if(datePart&&datePart<cutoff)try{localStorage.removeItem(k);}catch(e){}
+  });
+})();}catch(e){}
+
+// ── NATIVE ANDROID DATE PICKER BRIDGE ────────────────────────────────────────
+// Replaces all date inputs with a button that opens the native Material picker.
+(function(){
+  function fmtDisplay(iso){
+    if(!iso)return'';
+    var p=iso.split('-'),mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return mn[+p[1]-1]+' '+p[2]+', '+p[0];
+  }
+  function upgradeDateInput(inp){
+    if(inp._bridged||inp.getAttribute('data-no-fdp'))return;
+    inp._bridged=true;
+    var savedVal=inp.value;
+    inp.setAttribute('type','text');
+    inp.value=savedVal;
+    if(inp.id){
+      document.querySelectorAll('label[for="'+inp.id+'"]').forEach(function(l){
+        l.removeAttribute('for');
+      });
+    }
+    inp.style.cssText='position:absolute;width:0;height:0;opacity:0;pointer-events:none;';
+    inp.tabIndex=-1;
+    var wrap=document.createElement('div');
+    wrap.style.cssText='position:relative;display:block;';
+    inp.parentNode.insertBefore(wrap,inp);
+    wrap.appendChild(inp);
+    var btn=document.createElement('button');
+    btn.type='button';
+    btn.style.cssText='width:100%;padding:9px 12px;border:1.5px solid var(--border2);'+
+      'border-radius:var(--rs);background:var(--bg);color:'+(inp.value?'var(--text)':'var(--text3)')+
+      ';font-size:13px;font-family:inherit;cursor:pointer;text-align:left;'+
+      'min-height:38px;-webkit-appearance:none;outline:none;box-sizing:border-box;';
+    btn.textContent=inp.value?fmtDisplay(inp.value):(inp.getAttribute('placeholder')||'Select date');
+    wrap.appendChild(btn);
+    function openPicker(){
+      if(typeof AndroidDatePicker!=='undefined'){
+        AndroidDatePicker.open(inp.id||'', inp.value||'');
+      }
+    }
+    btn.addEventListener('click', openPicker);
+    btn.addEventListener('touchend', function(e){e.preventDefault();openPicker();});
+    // Sync button when value set programmatically
+    var _last=inp.value;
+    setInterval(function(){
+      if(inp.value!==_last){
+        _last=inp.value;
+        btn.textContent=inp.value?fmtDisplay(inp.value):(inp.getAttribute('placeholder')||'Select date');
+        btn.style.color=inp.value?'var(--text)':'var(--text3)';
+      }
+    },300);
+  }
+  function upgradeAll(){
+    document.querySelectorAll('input[type=date]').forEach(upgradeDateInput);
+  }
+  var obs=new MutationObserver(function(muts){
+    muts.forEach(function(m){
+      m.addedNodes.forEach(function(n){
+        if(n.nodeType!==1)return;
+        if(n.matches&&n.matches('input[type=date]'))upgradeDateInput(n);
+        n.querySelectorAll&&n.querySelectorAll('input[type=date]').forEach(upgradeDateInput);
+      });
+    });
+  });
+  obs.observe(document.body,{childList:true,subtree:true});
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',upgradeAll);
+  }else{upgradeAll();}
+  window.fdpUpgradeAll=upgradeAll;
+})();
+
+try{load();}catch(e){console.error('load() failed:',e);}
+try{renderDash();}catch(e){console.error('renderDash() failed:',e);}
+try{scheduleAll();}catch(e){console.error('scheduleAll() failed:',e);}
+try{initDrawerSections();}catch(e){console.error('initDrawerSections() failed:',e);}
+try{renderDrawerMenu();}catch(e){console.error('renderDrawerMenu() failed:',e);}
+try{(function(){var t=localStorage.getItem("dpp_theme");if(t==="dark"){document.documentElement.setAttribute("data-theme","dark");var el=document.getElementById("theme-toggle");if(el)el.classList.add("on");}var tz=localStorage.getItem("dpp_user_tz")||"Africa/Lagos";var el2=document.getElementById("dr-tz");if(el2)el2.textContent=tz.split("/")[1]||tz;})();}catch(e){console.error('theme init failed:',e);}
+try{(function(){
+  var h=new Date().getHours();
+  var g=h<12?"Good morning":h<17?"Good afternoon":"Good evening";
+  var el=document.getElementById("dash-greeting");
+  var name=localStorage.getItem("dpp_profile_name")||"Domain Investor";
+  if(el)el.textContent=g+', '+name+'! \uD83D\uDC4B';
+  var sn=document.getElementById('drawer-name');if(sn)sn.textContent=name;
+  var av=document.getElementById('drawer-avatar');if(av){var pts=name.trim().split(/\s+/);av.textContent=pts.length>1?(pts[0][0]+pts[1][0]).toUpperCase():name.substring(0,2).toUpperCase();}
+})();}catch(e){console.error("greeting failed:",e);}
+try{var due=getAllDue();if(due.length)toast(due.length+' follow-up'+(due.length>1?'s':'')+' due today!','warn');}catch(e){console.error('due check failed:',e);}
+
+// Attach file input listeners via JS (more reliable than inline onchange in Android WebView)
+try{
+  var _fi=document.getElementById('file-inp');
+  if(_fi){
+    function _onFileSelected(){
+      if(_fi.files&&_fi.files[0]){
+        var name=_fi.files[0].name;
+        var lbl=document.getElementById('file-chosen-name');
+        if(lbl)lbl.textContent='Selected: '+name;
+        var btn=document.getElementById('file-process-btn');
+        if(btn){btn.style.display='block';btn.textContent='\u2B06 Import: '+name;}
+        handleFile(_fi.files[0]);
+      }
+    }
+    _fi.addEventListener('change',_onFileSelected);
+    _fi.addEventListener('input',_onFileSelected);
+  }
+}catch(ex){console.error('file input listener failed:',ex);}
+
+// ── AUTO BACKUP NUDGE ─────────────────────────────────────────────────────────
+// Reminds user to export a backup once every 7 days to protect their data
+try{(function(){
+  var last=localStorage.getItem('dpp_last_backup_nudge');
+  var now=Date.now();
+  var SEVEN_DAYS=7*24*60*60*1000;
+  if(!last||(now-parseInt(last))>SEVEN_DAYS){
+    setTimeout(function(){
+      toast('\uD83D\uDCBE Tip: Export a backup from Bulk Import \u2192 Backup & Restore to protect your data','warn');
+      localStorage.setItem('dpp_last_backup_nudge',String(now));
+    },6000);
+  }
+})();}catch(e){}
+
+// ── ONLINE / OFFLINE BANNER ───────────────────────────────────────────────────
+// Non-blocking banner that warns user when connection drops or returns
+try{(function(){
+  var banner=document.createElement('div');
+  banner.id='net-banner';
+  banner.style.cssText='position:fixed;bottom:0;left:0;right:0;padding:10px 18px;font-size:13px;font-weight:700;text-align:center;z-index:99999;display:none;transition:opacity .3s';
+  document.body.appendChild(banner);
+  function showBanner(msg,bg){
+    banner.textContent=msg;banner.style.background=bg;banner.style.color='#fff';
+    banner.style.display='block';banner.style.opacity='1';
+  }
+  function hideBanner(){
+    banner.style.opacity='0';
+    setTimeout(function(){banner.style.display='none';},400);
+  }
+  window.addEventListener('offline',function(){
+    showBanner('\u26A0\uFE0F No internet \u2014 your data is safe but app may not reload correctly','#d97706');
+  });
+  window.addEventListener('online',function(){
+    showBanner('\u2705 Back online!','#16a34a');
+    setTimeout(hideBanner,3000);
+  });
+  if(!navigator.onLine){
+    showBanner('\u26A0\uFE0F No internet \u2014 your data is safe but app may not reload correctly','#d97706');
+  }
+})();}catch(e){}
+
+</script>
+</div><!-- /app -->
+</body>
+</html>
