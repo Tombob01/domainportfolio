@@ -803,26 +803,75 @@ const DEFAULT_EMAILS=[];
 
 let domains=[], emailAccounts=[], interests=[];
 
+// ── ANDROID SHARED PREFS BRIDGE (cross-origin persistent storage) ─────────────
+// Data is saved to BOTH localStorage (fast) AND Android SharedPreferences via
+// AndroidStorage bridge. On load(), if localStorage is empty (new URL/origin),
+// we pull from SharedPreferences as fallback — so data survives URL changes.
+function _aSet(key, val){
+  try{if(typeof AndroidStorage!=='undefined') AndroidStorage.set(key, val);}catch(e){}
+}
+function _aGet(key){
+  try{if(typeof AndroidStorage!=='undefined') return AndroidStorage.get(key);}catch(e){}
+  return null;
+}
+
 function load(){
-  try{domains=JSON.parse(localStorage.getItem('dpp_v5')||'[]')}catch(e){domains=[];}
+  // Primary: localStorage (fast, same-origin)
+  var ls_domains   = null, ls_emails = null, ls_interests = null;
+  try{ls_domains   = localStorage.getItem('dpp_v5');}catch(e){}
+  try{ls_emails    = localStorage.getItem('dpp_emails');}catch(e){}
+  try{ls_interests = localStorage.getItem('dpp_interests');}catch(e){}
+
+  // Fallback: Android SharedPreferences (survives URL/origin changes)
+  if(!ls_domains || ls_domains==='[]' || ls_domains==='null'){
+    var sp = _aGet('dpp_v5');
+    if(sp && sp!=='[]' && sp!=='null'){
+      ls_domains = sp;
+      // Migrate back into localStorage for this origin
+      try{localStorage.setItem('dpp_v5', sp);}catch(e){}
+      toast('✅ Your data was restored from device storage.','ok');
+    }
+  }
+  if(!ls_emails || ls_emails==='null'){
+    var sp2 = _aGet('dpp_emails');
+    if(sp2) { ls_emails = sp2; try{localStorage.setItem('dpp_emails', sp2);}catch(e){} }
+  }
+  if(!ls_interests || ls_interests==='[]' || ls_interests==='null'){
+    var sp3 = _aGet('dpp_interests');
+    if(sp3) { ls_interests = sp3; try{localStorage.setItem('dpp_interests', sp3);}catch(e){} }
+  }
+
+  try{domains=JSON.parse(ls_domains||'[]');}catch(e){domains=[];}
   try{
-    emailAccounts=JSON.parse(localStorage.getItem('dpp_emails')||'null');
+    emailAccounts=JSON.parse(ls_emails||'null');
     if(!emailAccounts) emailAccounts=DEFAULT_EMAILS.map(e=>({email:e,count:0}));
   }catch(e){emailAccounts=DEFAULT_EMAILS.map(e=>({email:e,count:0}));}
-  try{interests=JSON.parse(localStorage.getItem('dpp_interests')||'[]')}catch(e){interests=[];}
+  try{interests=JSON.parse(ls_interests||'[]');}catch(e){interests=[];}
 }
+
 function save(){
-  try{localStorage.setItem('dpp_v5',JSON.stringify(domains));}catch(e){
+  var domainsJson    = JSON.stringify(domains);
+  var emailsJson     = JSON.stringify(emailAccounts);
+  var interestsJson  = JSON.stringify(interests);
+
+  // Save to localStorage
+  try{localStorage.setItem('dpp_v5', domainsJson);}catch(e){
     if(e.name==='QuotaExceededError'||e.code===22){
-      // Emergency trim: keep only last 10 email log entries per domain to free space
+      // Emergency trim: keep only last 10 email log entries per domain
       domains.forEach(function(d){if(d.emailLog&&d.emailLog.length>10)d.emailLog=d.emailLog.slice(-10);});
-      try{localStorage.setItem('dpp_v5',JSON.stringify(domains));
+      domainsJson = JSON.stringify(domains);
+      try{localStorage.setItem('dpp_v5', domainsJson);
         toast('⚠️ Storage nearly full — old email log entries trimmed. Export a backup!','warn');
       }catch(e2){toast('⚠️ Storage full! Export a backup NOW to avoid data loss.','warn');}
     }
   }
-  try{localStorage.setItem('dpp_emails',JSON.stringify(emailAccounts));}catch(e){}
-  try{localStorage.setItem('dpp_interests',JSON.stringify(interests));}catch(e){}
+  try{localStorage.setItem('dpp_emails', emailsJson);}catch(e){}
+  try{localStorage.setItem('dpp_interests', interestsJson);}catch(e){}
+
+  // Mirror to Android SharedPreferences so data survives URL/origin changes
+  _aSet('dpp_v5',        domainsJson);
+  _aSet('dpp_emails',    emailsJson);
+  _aSet('dpp_interests', interestsJson);
 }
 
 // ── DATE HELPERS ──────────────────────────────────────────────────────────────
@@ -3376,29 +3425,8 @@ window.scheduleAndroidReminders = function() {
   } catch(e) { console.error('scheduleAndroidReminders failed:', e); }
 };
 
-// Called by MainActivity.onBackPressed() — return true to suppress exit dialog
-window.onAndroidBack = function() {
-  // 1. Close any open modal overlay
-  var modal = document.querySelector('[style*="position:fixed"][style*="z-index:9"]');
-  if (modal) { modal.remove(); return true; }
-  // 2. Close the side drawer
-  var drawer = document.getElementById('drawer');
-  if (drawer && drawer.classList.contains('open')) { closeDrawer(); return true; }
-  // 3. Close any expanded domain detail panel
-  var openDet = document.querySelector('.det.open');
-  if (openDet) {
-    var id = openDet.id.replace('det-', '');
-    try { toggleDet(id); } catch(e) { openDet.classList.remove('open'); }
-    return true;
-  }
-  // 4. If not on dashboard, go to dashboard
-  if (!document.getElementById('pg-dashboard').classList.contains('on')) {
-    var dashBtn = document.querySelector('.nb');
-    nav('dashboard', dashBtn);
-    return true;
-  }
-  return false; // let Android show the exit dialog
-};
+// window.onAndroidBack is assigned to handleBackButton above (line ~3047)
+// handleBackButton correctly returns false when on dashboard, triggering Android exit dialog
 
 // Named alias so existing call sites using scheduleAndroidReminders() bare name still work
 var scheduleAndroidReminders = window.scheduleAndroidReminders;
