@@ -1591,11 +1591,19 @@ function setSentDate(id,key,ph,phKey,val){
   }
   // ── Also update the visible input fields without full re-render ────────────
   // (full renderDomains() would close the panel — update in-place instead)
+  // After fdpUpgradeAll the date input is hidden (type=text, opacity:0).
+  // Setting .value alone isn't enough — we must also dispatch input/change so the
+  // fdp proxy button refreshes its display text (and any onchange chain fires).
   const NEXT_KEYS=NEXT[key]?[NEXT[key][0]]:[]; 
   if(NEXT_KEYS.length&&NEXT[NEXT_KEYS[0]]) NEXT_KEYS.push(NEXT[NEXT_KEYS[0]][0]);
   NEXT_KEYS.forEach(nk=>{
     const inp=document.querySelector(`input[onchange*="setSentDate('${id}','${nk}'"]`);
-    if(inp&&!inp.value&&d.sent[nk]) inp.value=d.sent[nk];
+    if(inp&&!inp.value&&d.sent[nk]){
+      inp.value=d.sent[nk];
+      // Dispatch events so fdp bridge proxy button updates its displayed text
+      inp.dispatchEvent(new Event('input',{bubbles:true}));
+      inp.dispatchEvent(new Event('change',{bubbles:true}));
+    }
   });
 
   save();scheduleAll();try{debouncedScheduleAndroid();}catch(e){}
@@ -3028,7 +3036,23 @@ function autoSetExpiry(){
   if(m===1&&day===29&&new Date(nextYear,1,29).getDate()!==29) day=28;
   var exp=new Date(nextYear,m,day);
   expiryEl.value=toVal(exp);
+  // Also update the fdp proxy button text if the bridge has upgraded this input
+  expiryEl.dispatchEvent(new Event('input',{bubbles:true}));
+  expiryEl.dispatchEvent(new Event('change',{bubbles:true}));
 }
+// Attach via addEventListener so programmatic dispatchEvent from Android bridge also triggers it
+(function(){
+  function _attachAutoExpiry(){
+    var regEl=document.getElementById('f-regdate');
+    if(regEl&&!regEl._autoExpiryAttached){
+      regEl._autoExpiryAttached=true;
+      regEl.addEventListener('change',autoSetExpiry);
+      regEl.addEventListener('input',autoSetExpiry);
+    }
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',_attachAutoExpiry);}
+  else{_attachAutoExpiry();}
+})();
 
 // Called from each bulk row's reg date input — only fills expiry if user hasn't set it
 function autoSetBulkExpiry(i){
@@ -3044,6 +3068,9 @@ function autoSetBulkExpiry(i){
   var day=d.getDate();
   if(m===1&&day===29&&new Date(nextYear,1,29).getDate()!==29) day=28;
   expEl.value=toVal(new Date(nextYear,m,day));
+  // Notify fdp proxy button to update its displayed text
+  expEl.dispatchEvent(new Event('input',{bubbles:true}));
+  expEl.dispatchEvent(new Event('change',{bubbles:true}));
 }
 
 // ── EXIT APP ──
@@ -3321,13 +3348,24 @@ try{(function(){
     btn.addEventListener('click', openPicker);
     btn.addEventListener('touchend', function(e){e.preventDefault();openPicker();});
     // Sync button when value changes — use input/change events instead of setInterval to avoid memory leaks
-    inp.addEventListener('change', function(){
+    // Also invoke the original onchange/oninput attribute handler explicitly:
+    // Android WebView does NOT call inline attribute handlers on programmatic dispatchEvent,
+    // so we must bridge that gap here for setSentDate(), autoSetExpiry(), etc. to fire correctly.
+    function _syncBtn(){
       btn.textContent=inp.value?fmtDisplay(inp.value):(inp.getAttribute('placeholder')||'Select date');
       btn.style.color=inp.value?'var(--text)':'var(--text3)';
+    }
+    function _invokeAttrHandler(attrName){
+      var handler=inp.getAttribute(attrName);
+      if(handler){try{(new Function('event',handler)).call(inp,{target:inp,currentTarget:inp});}catch(e){console.warn('fdp attr handler error',attrName,e);}}
+    }
+    inp.addEventListener('change', function(){
+      _syncBtn();
+      _invokeAttrHandler('onchange');
     });
     inp.addEventListener('input', function(){
-      btn.textContent=inp.value?fmtDisplay(inp.value):(inp.getAttribute('placeholder')||'Select date');
-      btn.style.color=inp.value?'var(--text)':'var(--text3)';
+      _syncBtn();
+      _invokeAttrHandler('oninput');
     });
   }
   function upgradeAll(){
