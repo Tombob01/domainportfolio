@@ -2082,6 +2082,7 @@ function addInterest(domainId, emailVal, notesVal, dateVal, fuVal){
   }
   renderInterests();
   scheduleAll();
+  try{debouncedScheduleAndroid();}catch(e){} // FIX: was missing, interest reminders not scheduled
   toast(`Interest logged for ${domain}`,'success');
   return entry;
 }
@@ -3013,6 +3014,9 @@ function saveTzModal(){
   var modal=inp.closest('[style*=fixed]');
   if(modal)modal.remove();
   toast('Timezone updated to '+tz,'success');
+  // FIX: Reschedule all Android alarms when user timezone changes —
+  // the 6am WAT pre-notification time depends on dpp_user_tz.
+  try{debouncedScheduleAndroid();}catch(e){}
 }
 function showAbout(){
   alert('Domain Portfolio Pro\nVersion 1.0\nBuilt for serious domain investors.');
@@ -3406,13 +3410,59 @@ try{(function(){
 
 // ── ANDROID BRIDGE WRAPPERS ──────────────────────────────────────────────────
 // Called by MainActivity.onResume() and after any save that schedules reminders
+
+// ── FIX: Correct timezone-aware time calculation ──────────────────────────────
+// Returns UTC ms for clock time (hour, minute) on isoDate IN tzName.
+// Old code used toLocaleDateString + ' 08:00:00' which was then parsed by
+// new Date() in the *device's* local timezone (WAT) — always wrong for US contacts.
+// This function computes the real UTC-offset for tzName on that date and applies it.
+// Example: _tzTargetMs('2026-04-24','America/Chicago',8,0) => 8:00 AM Chicago in ms
+function _tzTargetMs(isoDate, tzName, hour, minute) {
+  try {
+    // Anchor: midnight UTC on that calendar date
+    var anchor = new Date(isoDate + 'T00:00:00Z');
+    // en-CA locale gives "YYYY-MM-DD, HH:MM:SS" — unambiguous and easy to parse
+    var localStr = anchor.toLocaleString('en-CA', {
+      timeZone: tzName,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false
+    });
+    // Parse the local clock reading as a naive Date (no tz suffix) to derive the offset
+    var localAtUTCMidnight = new Date(localStr.replace(', ', 'T'));
+    // offsetMs: how many ms ahead/behind UTC the target timezone is on that date
+    var offsetMs = anchor.getTime() - localAtUTCMidnight.getTime();
+    // Build naive local clock time for isoDate at hour:minute, then shift by offset
+    var target = new Date(
+      isoDate + 'T' +
+      String(hour).padStart(2, '0') + ':' +
+      String(minute).padStart(2, '0') + ':00'
+    );
+    return target.getTime() + offsetMs;
+  } catch(e) {
+    // Fallback: device local time — better than NaN or a crash
+    return new Date(
+      isoDate + 'T' +
+      String(hour).padStart(2, '0') + ':' +
+      String(minute).padStart(2, '0') + ':00'
+    ).getTime();
+  }
+}
+
+// User home timezone — defaults to Africa/Lagos (WAT, UTC+1), overridable in settings
+function _userTz() {
+  return localStorage.getItem('dpp_user_tz') || 'Africa/Lagos';
+}
+
 window.scheduleAndroidReminders = function() {
   try {
     var items = [];
     var now = Date.now();
+    var userTz = _userTz(); // your timezone in Nigeria (WAT)
+
     domains.forEach(function(d) {
       if (d.sold) return;
-      var tz = d.locTz || 'America/New_York';
+      var tz = d.locTz || 'America/New_York'; // contact/buyer timezone
       var p1 = getP1(d), p2 = getP2(d), p3 = getP3(d), pdd = getPD(d);
       var pairs = [
         [p1.fu1, d.p1.fu1, 'Phase 1 +3d FU'],
@@ -3438,14 +3488,30 @@ window.scheduleAndroidReminders = function() {
         var dt = pair[0], done = pair[1], lbl = pair[2];
         if (!dt || done) return;
         try {
-          // Schedule at 8am in the domain's timezone
           var isoDate = toVal(dt);
-          var am8 = new Date(new Date(isoDate + 'T00:00:00').toLocaleDateString('en-US', {timeZone: tz}) + ' 08:00:00');
-          var triggerMs = am8.getTime();
+
+          // ── FIX: 8am in the CONTACT's US timezone (was broken before) ──
+          var triggerMs = _tzTargetMs(isoDate, tz, 8, 0);
           if (triggerMs <= now) return;
+
           var idHash = Math.abs((d.domain + lbl + isoDate).split('').reduce(function(a, c) {
             return (a << 5) - a + c.charCodeAt(0) | 0;
           }, 0));
+
+          // ── FIX: 6am WAT pre-notification (was never scheduled before) ──
+          // Gives you advance warning in Nigeria before the contact's 8am fires.
+          var watPreMs = _tzTargetMs(isoDate, userTz, 6, 0);
+          if (watPreMs > now) {
+            items.push({
+              id: idHash + 50000, // +50000 offset avoids collision with main notification
+              title: '\u23F0 Today: ' + d.domain + ' \u2014 ' + lbl,
+              body: 'Your ' + lbl + ' for ' + d.domain + ' fires at 8am ' +
+                    (d.locName || tz) + ' time. Prepare now!',
+              triggerMs: watPreMs
+            });
+          }
+
+          // Main notification at 8am in the contact's timezone
           items.push({
             id: idHash,
             title: d.domain + ' \u2014 ' + lbl,
@@ -3455,17 +3521,33 @@ window.scheduleAndroidReminders = function() {
         } catch(e) {}
       });
     });
-    // Interest follow-ups
+
+    // ── Interest follow-ups ──────────────────────────────────────────────────
     interests.forEach(function(it) {
       if (!it.followUp || it.followUpDone) return;
       var fuDt = pd(it.followUp); if (!fuDt) return;
       try {
-        var am8 = new Date(it.followUp + 'T08:00:00');
-        var triggerMs = am8.getTime();
+        // ── FIX: Was 'T08:00:00' parsed as device-local WAT — ignored buyer tz.
+        // Now uses interest entry's tz field if present, else user home tz.
+        var itTz = it.tz || userTz;
+        var triggerMs = _tzTargetMs(it.followUp, itTz, 8, 0);
         if (triggerMs <= now) return;
+
         var idHash = Math.abs(('int_' + it.id).split('').reduce(function(a, c) {
           return (a << 5) - a + c.charCodeAt(0) | 0;
         }, 0));
+
+        // 6am WAT pre-notification for interest follow-ups
+        var watPreMs = _tzTargetMs(it.followUp, userTz, 6, 0);
+        if (watPreMs > now) {
+          items.push({
+            id: idHash + 50000,
+            title: '\u23F0 Today: Interest follow-up \u2014 ' + it.domain,
+            body: 'Follow-up with ' + it.email + ' for ' + it.domain + ' is due today.',
+            triggerMs: watPreMs
+          });
+        }
+
         items.push({
           id: idHash,
           title: 'Interest follow-up: ' + it.domain,
@@ -3474,6 +3556,7 @@ window.scheduleAndroidReminders = function() {
         });
       } catch(e) {}
     });
+
     if (typeof AndroidNotify !== 'undefined') {
       AndroidNotify.scheduleReminders(JSON.stringify(items));
     }
