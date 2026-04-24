@@ -694,11 +694,11 @@ code{font-family:'SFMono-Regular',Consolas,monospace;background:var(--bg2);paddi
     <div class="g2">
       <div>
         <label>Date of interest</label>
-        <input type="date" id="int-date" onchange="(function(el){var fu=document.getElementById('int-fu-date');if(fu&&!fu.dataset.manuallySet&&el.value){var d=new Date(el.value+'T12:00:00');d.setDate(d.getDate()+3);fu.value=toVal(d);}}).call(null,this)" oninput="(function(el){var fu=document.getElementById('int-fu-date');if(fu&&!fu.dataset.manuallySet&&el.value){var d=new Date(el.value+'T12:00:00');d.setDate(d.getDate()+3);fu.value=toVal(d);}}).call(null,this)">
+        <input type="date" id="int-date">
       </div>
       <div>
         <label>Follow-up date (optional)</label>
-        <input type="date" id="int-fu-date" oninput="this.dataset.manuallySet='1'" onchange="this.dataset.manuallySet='1'">
+        <input type="date" id="int-fu-date">
       </div>
     </div>
     <button class="btn btn-primary" style="margin-top:12px" onclick="addInterest()">Log interest</button>
@@ -1559,53 +1559,8 @@ function setSentDate(id,key,ph,phKey,val){
   const d=domains.find(x=>x.id==id);if(!d)return;
   d.sent[key]=val;if(val)d[ph][phKey]=true;
   if(ph==='p1'&&phKey==='email'&&val&&d.status==='Not Contacted')d.status='Active';
-
-  // ── Auto-fill next dates in the same phase ────────────────────────────────
-  // Map: which key was just set → [next key, days offset]
-  const NEXT={
-    p1email:['p1fu1',3], p1fu1:['p1fu2',5], p1fu2:['p1fu3',7],
-    p2email:['p2fu1',3], p2fu1:['p2fu2',5], p2fu2:['p2fu3',7],
-    p3email:['p3fu1',3], p3fu1:['p3fu2',5], p3fu2:['p3fu3',7],
-    pdfu1:  ['pdfu2', 5], pdfu2:['pdfu3',7]
-  };
-  if(val&&NEXT[key]){
-    const [nextKey,days]=NEXT[key];
-    // Only fill if the next date isn't already set by the user
-    if(!d.sent[nextKey]){
-      const base=new Date(val+'T12:00:00');
-      base.setDate(base.getDate()+days);
-      d.sent[nextKey]=toVal(base);
-      // Also auto-mark the checkbox for that step as scheduled (not sent yet)
-      // We intentionally do NOT set d[ph][nextPhKey]=true — that's only when actually sent
-    }
-    // Cascade: fill the one after that too, if also empty
-    const NEXT2=NEXT[nextKey];
-    if(NEXT2){
-      const [nextKey2,days2]=NEXT2;
-      if(!d.sent[nextKey2]){
-        const base2=new Date(d.sent[nextKey]+'T12:00:00');
-        base2.setDate(base2.getDate()+days2);
-        d.sent[nextKey2]=toVal(base2);
-      }
-    }
-  }
-  // ── Also update the visible input fields without full re-render ────────────
-  // (full renderDomains() would close the panel — update in-place instead)
-  // After fdpUpgradeAll the date input is hidden (type=text, opacity:0).
-  // Setting .value alone isn't enough — we must also dispatch input/change so the
-  // fdp proxy button refreshes its display text (and any onchange chain fires).
-  const NEXT_KEYS=NEXT[key]?[NEXT[key][0]]:[]; 
-  if(NEXT_KEYS.length&&NEXT[NEXT_KEYS[0]]) NEXT_KEYS.push(NEXT[NEXT_KEYS[0]][0]);
-  NEXT_KEYS.forEach(nk=>{
-    const inp=document.querySelector(`input[onchange*="setSentDate('${id}','${nk}'"]`);
-    if(inp&&!inp.value&&d.sent[nk]){
-      inp.value=d.sent[nk];
-      // Dispatch events so fdp bridge proxy button updates its displayed text
-      inp.dispatchEvent(new Event('input',{bubbles:true}));
-      inp.dispatchEvent(new Event('change',{bubbles:true}));
-    }
-  });
-
+  // No auto-cascade: user manually enters each date they actually sent.
+  // Only update the proxy button display for THIS field (no dispatchEvent to other inputs).
   save();scheduleAll();try{debouncedScheduleAndroid();}catch(e){}
 }
 function setCheck(id,ph,k,val){
@@ -3307,19 +3262,24 @@ try{(function(){
     var p=iso.split('-'),mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return mn[+p[1]-1]+' '+p[2]+', '+p[0];
   }
+  var _fdpSeq=0;
   function upgradeDateInput(inp){
     if(inp._bridged||inp.getAttribute('data-no-fdp'))return;
     inp._bridged=true;
     var savedVal=inp.value;
-    inp.setAttribute('type','text');
+    // Change to hidden type so it takes zero space and never shows
+    inp.setAttribute('type','hidden');
     inp.value=savedVal;
     if(inp.id){
       document.querySelectorAll('label[for="'+inp.id+'"]').forEach(function(l){
         l.removeAttribute('for');
       });
     }
-    inp.style.cssText='position:absolute;width:0;height:0;opacity:0;pointer-events:none;';
-    inp.tabIndex=-1;
+    // Ensure every input has a stable unique identifier for the Android bridge
+    if(!inp.id){
+      inp.id='_fdp_'+(++_fdpSeq);
+    }
+    inp.setAttribute('data-dpid', inp.id);
     var wrap=document.createElement('div');
     wrap.style.cssText='position:relative;display:block;';
     inp.parentNode.insertBefore(wrap,inp);
@@ -3332,25 +3292,30 @@ try{(function(){
       'min-height:38px;-webkit-appearance:none;outline:none;box-sizing:border-box;';
     btn.textContent=inp.value?fmtDisplay(inp.value):(inp.getAttribute('placeholder')||'Select date');
     wrap.appendChild(btn);
-    // Set data-dpid so Java's evaluateJavascript snippet can always find the input
-    if(inp.id) inp.setAttribute('data-dpid', inp.id);
     function openPicker(){
       if(typeof AndroidDatePicker!=='undefined'){
-        AndroidDatePicker.open(inp.id||inp.getAttribute('data-dpid')||'', inp.value||'');
+        AndroidDatePicker.open(inp.getAttribute('data-dpid')||inp.id||'', inp.value||'');
       } else {
-        // Fallback for browser testing — restore real date input
-        inp.style.cssText='';
-        inp.type='date';
+        // Fallback for browser testing
+        inp.setAttribute('type','date');
+        inp.style.cssText='display:block;width:100%;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg);color:var(--text);font-size:13px;font-family:inherit;min-height:38px;';
+        btn.style.display='none';
         inp.focus();
         inp.click();
+        inp.addEventListener('change',function once(){
+          btn.textContent=inp.value?fmtDisplay(inp.value):'Select date';
+          btn.style.color=inp.value?'var(--text)':'var(--text3)';
+          inp.setAttribute('type','hidden');
+          inp.style.cssText='';
+          btn.style.display='';
+          inp.removeEventListener('change',once);
+        });
       }
     }
     btn.addEventListener('click', openPicker);
     btn.addEventListener('touchend', function(e){e.preventDefault();openPicker();});
-    // Sync button when value changes — use input/change events instead of setInterval to avoid memory leaks
-    // Also invoke the original onchange/oninput attribute handler explicitly:
-    // Android WebView does NOT call inline attribute handlers on programmatic dispatchEvent,
-    // so we must bridge that gap here for setSentDate(), autoSetExpiry(), etc. to fire correctly.
+    // Sync button text when value is set (e.g. by Android calling setDateValue())
+    // Use a flag to prevent _invokeAttrHandler from re-triggering openPicker on other inputs
     function _syncBtn(){
       btn.textContent=inp.value?fmtDisplay(inp.value):(inp.getAttribute('placeholder')||'Select date');
       btn.style.color=inp.value?'var(--text)':'var(--text3)';
@@ -3359,15 +3324,26 @@ try{(function(){
       var handler=inp.getAttribute(attrName);
       if(handler){try{(new Function('event',handler)).call(inp,{target:inp,currentTarget:inp});}catch(e){console.warn('fdp attr handler error',attrName,e);}}
     }
-    inp.addEventListener('change', function(){
+    // Only invoke the onchange attribute handler on real change events (not on programmatic input events)
+    // This prevents phantom picker opens when setSentDate or autoSetExpiry updates sibling inputs
+    inp.addEventListener('change', function(e){
       _syncBtn();
-      _invokeAttrHandler('onchange');
+      if(!e._synthetic) _invokeAttrHandler('onchange');
     });
-    inp.addEventListener('input', function(){
+    inp.addEventListener('input', function(e){
       _syncBtn();
-      _invokeAttrHandler('oninput');
+      // Do NOT call _invokeAttrHandler here — input events are only for syncing display
     });
   }
+  // setDateValue is called by Android after user picks a date in the native picker
+  // It sets the value and fires a real (non-synthetic) change event
+  window.setDateValue=function(dpid,val){
+    var inp=document.getElementById(dpid)||document.querySelector('[data-dpid="'+dpid+'"]');
+    if(!inp)return;
+    inp.value=val;
+    var ev=new Event('change',{bubbles:true});
+    inp.dispatchEvent(ev);
+  };
   function upgradeAll(){
     document.querySelectorAll('input[type=date]').forEach(upgradeDateInput);
   }
