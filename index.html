@@ -1770,7 +1770,7 @@ function getAllDue(){
      [p3.email,d.p3.email,'Phase 3 — pre-expiry email'],[p3.fu1,d.p3.fu1,'Phase 3 — +3d FU'],
      [p3.fu2,d.p3.fu2,'Phase 3 — +5d FU'],[p3.fu3,d.p3.fu3,'Phase 3 — +7d FU'],
      ...(d.pricedrop.active&&pdd.fu1?[[pdd.fu1,d.pricedrop.fu1,'Price-drop +3d FU'],[pdd.fu2,d.pricedrop.fu2,'Price-drop +5d FU'],[pdd.fu3,d.pricedrop.fu3,'Price-drop +7d FU']]:[])
-    ].forEach(([dt,done,lbl])=>{if(!dt||done)return;if(isToday(dt))due.push({domain:d.domain,label:lbl,locName:d.locName||d.locTz,tz:d.locTz,dt});});
+    ].forEach(([dt,done,lbl])=>{if(!dt||done)return;if(isToday(dt))due.push({id:d.id,domain:d.domain,label:lbl,locName:d.locName||d.locTz,tz:d.locTz,dt});});
   });
   return due;
 }
@@ -1856,7 +1856,7 @@ function renderDash(){
   document.getElementById('chip-exp').textContent=`${expiredList.length} expired`;
 
   document.getElementById('due-today').innerHTML=due.length
-    ?due.map(r=>`<div class="alert al-warn" style="margin-bottom:6px"><b>${r.domain}</b><div style="font-size:12px;margin-top:2px">${r.label}</div><div style="font-size:11px;margin-top:2px;opacity:.8">Notify at 8am · ${r.locName}</div></div>`).join('')
+    ?due.map(r=>`<div class="alert al-warn" style="margin-bottom:6px"><b style="cursor:pointer;text-decoration:underline;text-underline-offset:2px" onclick="openDomainDetail('${r.id}')">${r.domain}</b><div style="font-size:12px;margin-top:2px">${r.label}</div><div style="font-size:11px;margin-top:2px;opacity:.8">Notify at 8am · ${r.locName}</div></div>`).join('')
     :'<div style="font-size:13px;color:var(--text3);padding:6px 0">No follow-ups due today</div>';
 
   document.getElementById('recent-list').innerHTML=domains.slice(0,5).map(d=>{
