@@ -144,6 +144,22 @@ input[type=date]::-webkit-clear-button{display:none}
 .b-teal{background:var(--teal-lt);color:var(--teal-tx);border:1px solid #99f6e4}
 .b-purple{background:var(--purple-lt);color:var(--purple-tx);border:1px solid #ddd6fe}
 
+/* ── QUICK-VIEW MODAL ── */
+.qv-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.65);z-index:8000;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s}
+.qv-overlay.open{opacity:1;pointer-events:all}
+.qv-box{background:var(--bg);border-radius:var(--r);width:100%;max-width:440px;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow-md);transform:translateY(12px);transition:transform .2s;display:flex;flex-direction:column}
+.qv-overlay.open .qv-box{transform:translateY(0)}
+.qv-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px}
+.qv-title{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.2px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qv-close{width:30px;height:30px;border-radius:50%;border:none;background:var(--bg3);color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.qv-close:hover{background:var(--border2)}
+.qv-body{padding:16px 20px 20px;display:flex;flex-direction:column;gap:13px}
+.qv-row{display:flex;flex-direction:column;gap:4px}
+.qv-lbl{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
+.qv-val{font-size:13px;color:var(--text);line-height:1.5}
+.qv-divider{height:1px;background:var(--border);flex-shrink:0}
+.qv-footer{padding:12px 20px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:8px;justify-content:flex-end}
+
 /* ── DOMAIN CARDS ── */
 .dcard{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:17px 20px;margin-bottom:10px;transition:border-color .2s,box-shadow .2s,transform .15s;box-shadow:var(--shadow-sm)}
 .dcard:hover{border-color:var(--border2);box-shadow:var(--shadow);transform:translateY(-1px)}
@@ -421,6 +437,21 @@ code{font-family:'SFMono-Regular',Consolas,monospace;background:var(--bg2);paddi
       <div class="drawer-item-icon" style="font-size:16px">🚪</div> Exit App
     </button>
 
+  </div>
+</div>
+
+<!-- QUICK-VIEW MODAL -->
+<div id="qv-overlay" class="qv-overlay" onclick="(function(e){if(e.target===document.getElementById('qv-overlay'))closeQuickView();}).call(null,event)">
+  <div class="qv-box" id="qv-box">
+    <div class="qv-head">
+      <div class="qv-title" id="qv-domain-name">—</div>
+      <button class="qv-close" onclick="closeQuickView()" title="Close">✕</button>
+    </div>
+    <div class="qv-body" id="qv-body"></div>
+    <div class="qv-footer">
+      <button class="btn btn-sm" onclick="closeQuickView()">Close</button>
+      <button class="btn btn-sm btn-primary" id="qv-full-btn" onclick="">View full details →</button>
+    </div>
   </div>
 </div>
 
@@ -1856,20 +1887,163 @@ function renderDash(){
   document.getElementById('chip-exp').textContent=`${expiredList.length} expired`;
 
   document.getElementById('due-today').innerHTML=due.length
-    ?due.map(r=>`<div class="alert al-warn" style="margin-bottom:6px"><b style="cursor:pointer;text-decoration:underline;text-underline-offset:2px" onclick="openDomainDetail('${r.id}')">${r.domain}</b><div style="font-size:12px;margin-top:2px">${r.label}</div><div style="font-size:11px;margin-top:2px;opacity:.8">Notify at 8am · ${r.locName}</div></div>`).join('')
+    ?due.map(r=>`<div class="alert al-warn" style="margin-bottom:6px"><b style="cursor:pointer;text-decoration:underline;text-underline-offset:2px" onclick="openDomainQuickView('${r.id}')">${r.domain}</b><div style="font-size:12px;margin-top:2px">${r.label}</div><div style="font-size:11px;margin-top:2px;opacity:.8">Notify at 8am · ${r.locName}</div></div>`).join('')
     :'<div style="font-size:13px;color:var(--text3);padding:6px 0">No follow-ups due today</div>';
 
   document.getElementById('recent-list').innerHTML=domains.slice(0,5).map(d=>{
     const n=d.expiry?daysUntil(pd(d.expiry)):null;
     const isExp=n!==null&&n<0&&!d.sold;
-    return`<div class="dcard ${d.sold?'sold':isExp?'expired':n!==null&&n<=7?'expiring':n!==null&&n<=30?'expiring-soon':''}" onclick="openDomainDetail('${d.id}')" style="cursor:pointer">
+    return`<div class="dcard ${d.sold?'sold':isExp?'expired':n!==null&&n<=7?'expiring':n!==null&&n<=30?'expiring-soon':''}" onclick="openDomainQuickView('${d.id}')" style="cursor:pointer">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
         <span class="dn">${d.domain}</span>
-        <div style="display:flex;align-items:center;gap:6px">${sBadge(d.sold?'Sold':isExp?'Expired':d.status)}<span style="font-size:11px;color:var(--text3);font-weight:600">View →</span></div>
+        <div style="display:flex;align-items:center;gap:6px">${sBadge(d.sold?'Sold':isExp?'Expired':d.status)}<span style="font-size:11px;color:var(--text3);font-weight:600">Quick view →</span></div>
       </div>
       <div class="dm">${d.registrar||'—'} · ${d.locName||d.locTz||'—'} · Exp: ${fmt(pd(d.expiry))}${d.listPrice?' · $'+d.listPrice.toLocaleString():''}</div>
     </div>`;}).join('')||'<div class="empty">No domains yet</div>';
 }
+
+// ── QUICK-VIEW MODAL ─────────────────────────────────────────────────────────
+function openDomainQuickView(id){
+  const d=domains.find(x=>x.id==id);if(!d)return;
+
+  // ── Header: domain name ──
+  document.getElementById('qv-domain-name').textContent=d.domain;
+
+  // ── "View full details" button ──
+  document.getElementById('qv-full-btn').onclick=function(){closeQuickView();openDomainDetail(id);};
+
+  // ── Status badge ──
+  const expDt=pd(d.expiry),expDays=daysUntil(expDt);
+  const isExp=expDays!==null&&expDays<0&&!d.sold;
+  const displayStatus=d.sold?'Sold':isExp?'Expired':d.status;
+
+  // ── Email log: aggregate by email ──
+  const emailAgg={};
+  (d.emailLog||[]).forEach(function(l){emailAgg[l.email]=(emailAgg[l.email]||0)+l.count;});
+  const emailEntries=Object.entries(emailAgg).sort(function(a,b){return b[1]-a[1];});
+  let emailHTML='<span style="color:var(--text3);font-size:12px">No emails logged</span>';
+  if(emailEntries.length){
+    emailHTML=emailEntries.map(function(entry){
+      const email=entry[0],count=entry[1];
+      return'<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border)">'
+        +'<span style="flex:1;font-size:12px;font-weight:600;color:var(--blue-tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+email+'">'+email+'</span>'
+        +'<span class="email-count">'+count+' sent</span>'
+        +'</div>';
+    }).join('');
+  }
+
+  // ── Notes ──
+  const notesHTML=d.notes
+    ?'<div style="font-size:12px;color:var(--text2);line-height:1.6;white-space:pre-wrap">'+d.notes+'</div>'
+    :'<span style="color:var(--text3);font-size:12px">No notes</span>';
+
+  // ── Follow-up summary: scan phases for next due / overdue item ──
+  const p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
+  const phaseItems=[
+    [p1.email,d.p1.email,'P1 Initial email'],
+    [p1.fu1,d.p1.fu1,'P1 +3d follow-up'],
+    [p1.fu2,d.p1.fu2,'P1 +5d follow-up'],
+    [p1.fu3,d.p1.fu3,'P1 +7d follow-up'],
+    [p2.email,d.p2.email,'P2 6-month email'],
+    [p2.fu1,d.p2.fu1,'P2 +3d FU'],
+    [p2.fu2,d.p2.fu2,'P2 +5d FU'],
+    [p2.fu3,d.p2.fu3,'P2 +7d FU'],
+    [p3.email,d.p3.email,'P3 Pre-expiry email'],
+    [p3.fu1,d.p3.fu1,'P3 +3d FU'],
+    [p3.fu2,d.p3.fu2,'P3 +5d FU'],
+    [p3.fu3,d.p3.fu3,'P3 +7d FU']
+  ];
+  if(d.pricedrop&&d.pricedrop.active&&pdd.fu1){
+    phaseItems.push([pdd.fu1,d.pricedrop.fu1,'Price-drop +3d FU']);
+    phaseItems.push([pdd.fu2,d.pricedrop.fu2,'Price-drop +5d FU']);
+    phaseItems.push([pdd.fu3,d.pricedrop.fu3,'Price-drop +7d FU']);
+  }
+  // Also check interest follow-ups for this domain
+  const domainInterests=interests.filter(function(i){return i.domain===d.domain&&!i.followUpDone&&i.followUp;});
+
+  let fuHTML='<span style="color:var(--text3);font-size:12px">No active follow-ups</span>';
+  const overdueItems=[];
+  const dueItems=[];
+  const upcomingItems=[];
+  phaseItems.forEach(function(item){
+    const dt=item[0],done=item[1],lbl=item[2];
+    if(!dt||done)return;
+    const days=daysUntil(dt);
+    if(days===null)return;
+    if(days<0)overdueItems.push({lbl:lbl,dt:dt,days:days});
+    else if(days===0)dueItems.push({lbl:lbl,dt:dt,days:0});
+    else upcomingItems.push({lbl:lbl,dt:dt,days:days});
+  });
+  domainInterests.forEach(function(it){
+    const fuDt=pd(it.followUp);if(!fuDt)return;
+    const days=daysUntil(fuDt);if(days===null)return;
+    const lbl='Interest FU ('+it.email+')';
+    if(days<0)overdueItems.push({lbl:lbl,dt:fuDt,days:days});
+    else if(days===0)dueItems.push({lbl:lbl,dt:fuDt,days:0});
+    else upcomingItems.push({lbl:lbl,dt:fuDt,days:days});
+  });
+  upcomingItems.sort(function(a,b){return a.days-b.days;});
+
+  const fuParts=[];
+  overdueItems.slice(0,2).forEach(function(r){
+    fuParts.push('<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid var(--border)">'
+      +'<span class="badge b-red" style="font-size:10px;padding:2px 7px;flex-shrink:0">OVERDUE</span>'
+      +'<span style="font-size:12px;color:var(--text)">'+r.lbl+'</span>'
+      +'<span style="font-size:11px;color:var(--text3);margin-left:auto;flex-shrink:0">'+fmt(r.dt)+'</span>'
+      +'</div>');
+  });
+  dueItems.forEach(function(r){
+    fuParts.push('<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid var(--border)">'
+      +'<span class="badge b-amber" style="font-size:10px;padding:2px 7px;flex-shrink:0">TODAY</span>'
+      +'<span style="font-size:12px;color:var(--text)">'+r.lbl+'</span>'
+      +'<span style="font-size:11px;color:var(--text3);margin-left:auto;flex-shrink:0">'+fmt(r.dt)+'</span>'
+      +'</div>');
+  });
+  upcomingItems.slice(0,2).forEach(function(r){
+    fuParts.push('<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid var(--border)">'
+      +'<span class="badge b-blue" style="font-size:10px;padding:2px 7px;flex-shrink:0">In '+r.days+'d</span>'
+      +'<span style="font-size:12px;color:var(--text)">'+r.lbl+'</span>'
+      +'<span style="font-size:11px;color:var(--text3);margin-left:auto;flex-shrink:0">'+fmt(r.dt)+'</span>'
+      +'</div>');
+  });
+  if(fuParts.length)fuHTML=fuParts.join('');
+
+  // ── Expiry info ──
+  const expiryHTML=d.expiry
+    ?'<span style="font-size:13px;color:'+(isExp?'var(--red)':expDays!==null&&expDays<=30?'var(--amber)':'var(--text)')+'">'+fmt(expDt)+(isExp?' ('+Math.abs(expDays)+'d ago)':expDays!==null?' ('+expDays+'d left)':'')+'</span>'
+    :'<span style="color:var(--text3);font-size:12px">No expiry set</span>';
+
+  // ── Assemble body ──
+  document.getElementById('qv-body').innerHTML=
+    // Status row
+    '<div class="qv-row"><div class="qv-lbl">Status</div><div class="qv-val">'+sBadge(displayStatus)+(d.marketplace?' <span style="font-size:11px;color:var(--text3);margin-left:6px">'+d.marketplace+'</span>':'')+'</div></div>'
+    +'<div class="qv-divider"></div>'
+    // Expiry
+    +'<div class="qv-row"><div class="qv-lbl">Expiry</div><div class="qv-val">'+expiryHTML+'</div></div>'
+    +'<div class="qv-divider"></div>'
+    // Email accounts & send counts
+    +'<div class="qv-row"><div class="qv-lbl">Email sends</div><div class="qv-val">'+emailHTML+'</div></div>'
+    +'<div class="qv-divider"></div>'
+    // Follow-up summary
+    +'<div class="qv-row"><div class="qv-lbl">Follow-up summary</div><div class="qv-val">'+fuHTML+'</div></div>'
+    +'<div class="qv-divider"></div>'
+    // Notes
+    +'<div class="qv-row"><div class="qv-lbl">Notes</div><div class="qv-val">'+notesHTML+'</div></div>';
+
+  // ── Show overlay ──
+  const ov=document.getElementById('qv-overlay');
+  ov.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closeQuickView(){
+  const ov=document.getElementById('qv-overlay');
+  if(ov)ov.classList.remove('open');
+  document.body.style.overflow='';
+}
+
+// ── Close modal on Escape key ──
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeQuickView();});
 
 function openDomainDetail(id){
   // Navigate to My Domains tab
