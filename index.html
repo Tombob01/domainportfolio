@@ -472,13 +472,13 @@ code{font-family:'SFMono-Regular',Consolas,monospace;background:var(--bg2);paddi
     </div>
   </div>
   <nav class="nav">
-    <button class="nb on" onclick="nav('dashboard',this)">Dashboard</button>
-    <button class="nb" onclick="nav('add',this)">+ Add Domain</button>
-    <button class="nb" onclick="nav('domains',this)">My Domains</button>
-    <button class="nb" onclick="nav('import',this)">Bulk Import</button>
-    <button class="nb" onclick="nav('reminders',this)">Reminders</button>
-    <button class="nb" onclick="nav('interests',this)">Interests</button>
-    <button class="nb" onclick="nav('emails',this)">Email Accounts</button>
+    <button class="nb on" onclick="navPage('dashboard',this)">Dashboard</button>
+    <button class="nb" onclick="navPage('add',this)">+ Add Domain</button>
+    <button class="nb" onclick="navPage('domains',this)">My Domains</button>
+    <button class="nb" onclick="navPage('import',this)">Bulk Import</button>
+    <button class="nb" onclick="navPage('reminders',this)">Reminders</button>
+    <button class="nb" onclick="navPage('interests',this)">Interests</button>
+    <button class="nb" onclick="navPage('emails',this)">Email Accounts</button>
   </nav>
 </div>
 
@@ -682,7 +682,7 @@ code{font-family:'SFMono-Regular',Consolas,monospace;background:var(--bg2);paddi
   </div>
   <div class="card card-blue">
     <div style="font-size:15px;font-weight:800;margin-bottom:6px">Browser notifications</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">Alerts fire at <b>8am in the domain's US timezone</b> on every follow-up day, expiry warning, and price drop.</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.6">Alerts fire at <b>8am in the domain's US timezone</b> on every follow-up day and expiry warning.</div>
     <button class="btn btn-primary" onclick="reqNotif()" id="notif-btn">Enable notifications</button>
     <div id="notif-st" style="font-size:12px;color:var(--text2);margin-top:8px"></div>
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--text3);line-height:1.7">
@@ -1195,10 +1195,151 @@ function getP3(d){
   const w30=addD(expDt,-30),w7=addD(expDt,-7),e=pd(d.sent.p3email)||w30,eNext=addD(e,1),f1=pd(d.sent.p3fu1)||addD(eNext,3),f2=pd(d.sent.p3fu2)||addD(f1,5),f3=pd(d.sent.p3fu3)||addD(f2,7);
   return{warn30:w30,warn7:w7,email:e,fu1:f1,fu2:f2,fu3:f3};
 }
-function getPD(d){
-  if(!d.pricedrop||!d.pricedrop.active||!d.pricedrop.date)return{};
-  const base=addD(pd(d.pricedrop.date),1),f1=pd(d.sent.pdfu1)||addD(base,3),f2=pd(d.sent.pdfu2)||addD(f1,5),f3=pd(d.sent.pdfu3)||addD(f2,7);
-  return{fu1:f1,fu2:f2,fu3:f3};
+// getPD: price-drop follow-up sequence removed (Option C).
+// Price drops are still recorded in priceHistory for reference but trigger no notifications.
+function getPD(d){ return {}; }
+
+// ── UNIFIED DUE-TODAY SOURCE OF TRUTH ────────────────────────────────────────
+// Returns array of {dt, done, label} items that are DUE TODAY for a domain.
+// Used by BOTH: UI "Due Today" rendering AND the notification system.
+function isDomainDueToday(d) {
+  if (!d || d.sold) return [];
+  var p1 = getP1(d), p2 = getP2(d), p3 = getP3(d), pdd = getPD(d);
+
+  var candidates = [
+    [p1.email,  d.p1.email,      'Phase 1 initial email'],
+    [p1.fu1,    d.p1.fu1,        'Phase 1 +3d FU'],
+    [p1.fu2,    d.p1.fu2,        'Phase 1 +5d FU'],
+    [p1.fu3,    d.p1.fu3,        'Phase 1 +7d FU'],
+    [p2.warn,   false,           'Phase 2 alert'],
+    [p2.email,  d.p2.email,      'Phase 2 6-month email'],
+    [p2.fu1,    d.p2.fu1,        'Phase 2 +3d FU'],
+    [p2.fu2,    d.p2.fu2,        'Phase 2 +5d FU'],
+    [p2.fu3,    d.p2.fu3,        'Phase 2 +7d FU'],
+    [p3.warn30, false,           'Expiry warning — 30 days left'],
+    [p3.warn7,  false,           'Expiry warning — 7 days left!'],
+    [p3.email,  d.p3.email,      'Phase 3 pre-expiry email'],
+    [p3.fu1,    d.p3.fu1,        'Phase 3 +3d FU'],
+    [p3.fu2,    d.p3.fu2,        'Phase 3 +5d FU'],
+    [p3.fu3,    d.p3.fu3,        'Phase 3 +7d FU']
+  ];
+
+  // Price-drop follow-up sequence removed — price drops recorded in history only.
+
+  var due = [];
+  candidates.forEach(function(row) {
+    var dt = row[0], done = row[1], lbl = row[2];
+    if (!dt || done) return;
+    if (isToday(dt)) due.push({dt: dt, done: done, label: lbl});
+  });
+  return due;
+}
+
+// ── UNIFIED NOTIFICATION SCHEDULER ──────────────────────────────────────────
+// The ONLY function that schedules Android notifications for a domain.
+// Used for: normal schedule, snooze reschedule, and startup rebuild.
+// triggerIsoDate: 'YYYY-MM-DD' string of the day to fire
+// label: human-readable string for this notification
+// domainObj: full domain object (for tz, name, etc.)
+function scheduleDomainNotification(domainObj, triggerIsoDate, label) {
+  if (typeof AndroidNotify === 'undefined') return;
+  var tz = domainObj.locTz || 'America/New_York';
+  var triggerMs = _tzTargetMs(triggerIsoDate, tz, 8, 0);
+  var now = Date.now();
+  if (triggerMs <= now) return; // already past
+
+  var idHash = Math.abs((domainObj.domain + label + triggerIsoDate).split('').reduce(function(a, c) {
+    return (a << 5) - a + c.charCodeAt(0) | 0;
+  }, 0));
+
+  // Cancel any existing notification for this domain+label slot before scheduling
+  try { AndroidNotify.cancelNotification(idHash); } catch(e) {}
+  try { AndroidNotify.cancelNotification(idHash + 50000); } catch(e) {}
+
+  var userTz = _userTz();
+  var watPreMs = _tzTargetMs(triggerIsoDate, userTz, 6, 0);
+  var items = [];
+
+  if (watPreMs > now) {
+    items.push({
+      id: idHash + 50000,
+      title: '\u23F0 Today: ' + domainObj.domain + ' \u2014 ' + label,
+      body: 'Your ' + label + ' for ' + domainObj.domain + ' fires at 8am ' +
+            (domainObj.locName || tz) + ' time. Prepare now!',
+      triggerMs: watPreMs
+    });
+  }
+  items.push({
+    id: idHash,
+    title: domainObj.domain + ' \u2014 ' + label,
+    body: label + ' for ' + domainObj.domain + ' (' + (domainObj.locName || tz) + ')',
+    triggerMs: triggerMs
+  });
+
+  try { AndroidNotify.scheduleReminders(JSON.stringify(items)); } catch(e) {}
+}
+
+// ── SNOOZE HANDLER ────────────────────────────────────────────────────────────
+// Called by Android when user taps "Snooze 1 day" on a notification.
+// domainId: the domain.id string
+// label: the notification label (must match exactly what was scheduled)
+// This cancels the current notification, persists the snooze, and reschedules
+// for 8am tomorrow in the domain's timezone.
+window.onSnoozeNotification = function(domainId, label) {
+  try {
+    var d = domains.find(function(x) { return x.id == domainId; });
+    if (!d) return;
+
+    // Tomorrow's date in the domain's timezone
+    var tz = d.locTz || 'America/New_York';
+    var nowInTz = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    var tomorrowDt = new Date(nowInTz + 'T12:00:00');
+    tomorrowDt.setDate(tomorrowDt.getDate() + 1);
+    var tomorrowIso = toVal(tomorrowDt);
+
+    // Persist snooze so it survives app restart
+    var snoozeKey = 'dpp_snooze_' + domainId + '_' + label.replace(/[^a-zA-Z0-9]/g, '_');
+    try { localStorage.setItem(snoozeKey, tomorrowIso); } catch(e) {}
+    try { _aSet(snoozeKey, tomorrowIso); } catch(e) {}
+
+    // Cancel current notification IDs for this slot
+    var idHash = Math.abs((d.domain + label + toVal(new Date())).split('').reduce(function(a, c) {
+      return (a << 5) - a + c.charCodeAt(0) | 0;
+    }, 0));
+    try { if (typeof AndroidNotify !== 'undefined') { AndroidNotify.cancelNotification(idHash); AndroidNotify.cancelNotification(idHash + 50000); } } catch(e) {}
+
+    // Schedule for tomorrow using unified function
+    scheduleDomainNotification(d, tomorrowIso, label);
+    toast('\u23F0 Snoozed — will remind again tomorrow at 8am ' + (d.locName || tz), 'success');
+  } catch(e) { console.error('onSnoozeNotification failed:', e); }
+};
+
+// Restore snoozed notifications on app startup.
+// Any snooze that is still in the future gets rescheduled via AndroidNotify.
+function restoreSnoozedNotifications() {
+  var prefix = 'dpp_snooze_';
+  var todayIso = toVal(new Date());
+  try {
+    Object.keys(localStorage).forEach(function(k) {
+      if (k.indexOf(prefix) !== 0) return;
+      var isoDate = localStorage.getItem(k);
+      if (!isoDate || isoDate < todayIso) {
+        // Snooze date is past — clean up
+        try { localStorage.removeItem(k); } catch(e) {}
+        return;
+      }
+      // Parse domainId and label back from key: dpp_snooze_<id>_<label>
+      var rest = k.slice(prefix.length);
+      // Find which domain id matches
+      var domainObj = null;
+      domains.forEach(function(d) {
+        if (rest.indexOf(d.id) === 0) domainObj = d;
+      });
+      if (!domainObj) return;
+      var label = rest.slice(domainObj.id.length + 1).replace(/_/g, ' ');
+      scheduleDomainNotification(domainObj, isoDate, label);
+    });
+  } catch(e) { console.error('restoreSnoozedNotifications failed:', e); }
 }
 
 // ── ADD DOMAIN ────────────────────────────────────────────────────────────────
@@ -1278,9 +1419,7 @@ function renderCard(d){
       ${p3.warn7?`<span class="step ${daysUntil(p3.warn7)<=0?'alert':'upcoming'}"><span class="dot ${daysUntil(p3.warn7)<=0?'d-due':'d-up'}"></span>7d ${fmt(p3.warn7)}</span>`:''}
       ${stepH('Email',d.p3.email,p3.email)}${stepH('+3d',d.p3.fu1,p3.fu1)}${stepH('+5d',d.p3.fu2,p3.fu2)}${stepH('+7d',d.p3.fu3,p3.fu3)}
     </div></div>`:''}
-    ${d.pricedrop.active&&d.pricedrop.date?`<div class="tl-row"><div class="tl-lbl">Price drop</div><div class="tl-steps">
-      ${stepH('+3d',d.pricedrop.fu1,pdd.fu1)}${stepH('+5d',d.pricedrop.fu2,pdd.fu2)}${stepH('+7d',d.pricedrop.fu3,pdd.fu3)}
-    </div></div>`:''}
+
   </div>
   <div style="margin-top:10px"><button class="btn-ghost" onclick="toggleDet('${d.id}')">▾ Edit dates, emails & options</button></div>
   <div class="det" id="det-${d.id}">
@@ -1301,7 +1440,6 @@ function renderCard(d){
         ${[['p1email','P1 Email'],['p1fu1','P1 Follow-up 1 (+3d)'],['p1fu2','P1 Follow-up 2 (+5d)'],['p1fu3','P1 Follow-up 3 (+7d)'],
            ['p2email','P2 Email (6-month)'],['p2fu1','P2 Follow-up 1'],['p2fu2','P2 Follow-up 2'],['p2fu3','P2 Follow-up 3'],
            ['p3email','P3 Email (pre-expiry)'],['p3fu1','P3 Follow-up 1'],['p3fu2','P3 Follow-up 2'],['p3fu3','P3 Follow-up 3'],
-           ...(d.pricedrop.active?[['pdfu1','Price-drop FU1'],['pdfu2','Price-drop FU2'],['pdfu3','Price-drop FU3']]:[])
           ].map(([k,lbl])=>{const ph=k.startsWith('p1')?'p1':k.startsWith('p2')?'p2':k.startsWith('p3')?'p3':'pricedrop';const fk=k.replace('p1','').replace('p2','').replace('p3','').replace('pd','').toLowerCase()||k;
           const phKey=k==='p1email'?'email':k==='p1fu1'?'fu1':k==='p1fu2'?'fu2':k==='p1fu3'?'fu3':k==='p2email'?'email':k==='p2fu1'?'fu1':k==='p2fu2'?'fu2':k==='p2fu3'?'fu3':k==='p3email'?'email':k==='p3fu1'?'fu1':k==='p3fu2'?'fu2':k==='p3fu3'?'fu3':k==='pdfu1'?'fu1':k==='pdfu2'?'fu2':'fu3';
           return`<div class="date-row">
@@ -1407,7 +1545,7 @@ function switchTab(id,tab,btn){
 }
 
 // Returns the next uncompleted phase follow-up date (ISO string) for a domain,
-// scanning p1→p2→p3→pricedrop in order, skipping already-marked steps.
+// scanning p1→p2→p3 in order, skipping already-marked steps.
 function getNextPhaseFuDate(id){
   const d=domains.find(x=>x.id==id);if(!d)return'';
   const p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
@@ -1416,7 +1554,7 @@ function getNextPhaseFuDate(id){
     [p1.fu1, d.p1.fu1],[p1.fu2, d.p1.fu2],[p1.fu3, d.p1.fu3],
     [p2.fu1, d.p2.fu1],[p2.fu2, d.p2.fu2],[p2.fu3, d.p2.fu3],
     [p3.fu1, d.p3.fu1],[p3.fu2, d.p3.fu2],[p3.fu3, d.p3.fu3],
-    ...(d.pricedrop&&d.pricedrop.active?[[pdd.fu1,d.pricedrop.fu1],[pdd.fu2,d.pricedrop.fu2],[pdd.fu3,d.pricedrop.fu3]]:[])
+
   ];
   for(const [dt,done] of seq){
     if(!done&&dt){const iso=toVal(dt);if(iso)return iso;}
@@ -1597,7 +1735,6 @@ function setSentDate(id,key,ph,phKey,val){
     p1email:['p1fu1',3], p1fu1:['p1fu2',5], p1fu2:['p1fu3',7],
     p2email:['p2fu1',3], p2fu1:['p2fu2',5], p2fu2:['p2fu3',7],
     p3email:['p3fu1',3], p3fu1:['p3fu2',5], p3fu2:['p3fu3',7],
-    pdfu1:  ['pdfu2', 5], pdfu2:['pdfu3',7]
   };
   if(val&&NEXT[key]){
     const [nextKey,days]=NEXT[key];
@@ -1649,8 +1786,7 @@ function updPrice(id){
   if(!d.priceHistory)d.priceHistory=[];
   d.priceHistory.push({price:np,date:toVal(new Date()),note:drop?`Drop from $${(d.listPrice||0).toLocaleString()}`:`Rise from $${(d.listPrice||0).toLocaleString()}`});
   d.listPrice=np;
-  if(drop){d.pricedrop={active:true,date:toVal(new Date()),fu1:false,fu2:false,fu3:false};toast(`Price drop logged — FU sequence triggered`,'success');}
-  else toast('Price updated','success');
+  toast(drop ? 'Price updated — drop recorded in price history' : 'Price updated','success');
   save();renderDomains();scheduleAll();try{debouncedScheduleAndroid();}catch(e){}
 }
 function setSold(id,v){const d=domains.find(x=>x.id==id);if(!d)return;d.sold=v;d.status=v?'Sold':'Active';save();}
@@ -1774,8 +1910,7 @@ function renderDomains(){
     }
     if(fo==='overdue'){
       const p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
-      const hasOverdue=[p1.fu1,p1.fu2,p1.fu3,p2.email,p2.fu1,p2.fu2,p2.fu3,p3.email,p3.fu1,p3.fu2,p3.fu3,
-        ...(d.pricedrop.active?[pdd.fu1,pdd.fu2,pdd.fu3]:[])
+      const hasOverdue=[p1.fu1,p1.fu2,p1.fu3,p2.email,p2.fu1,p2.fu2,p2.fu3,p3.email,p3.fu1,p3.fu2,p3.fu3
       ].some(dt=>dt&&isPast(dt)&&!isToday(dt));
       const hasIntOverdue=interests.some(i=>i.domain===d.domain&&!i.followUpDone&&i.followUp&&daysUntil(pd(i.followUp))<0);
       if(!hasOverdue&&!hasIntOverdue)return false;
@@ -1788,20 +1923,14 @@ function renderDomains(){
 }
 
 // ── DUE TODAY ─────────────────────────────────────────────────────────────────
+// Uses isDomainDueToday() as single source of truth — same logic as notifications.
 function getAllDue(){
-  const due=[];
-  domains.forEach(d=>{
+  var due=[];
+  domains.forEach(function(d){
     if(d.sold)return;
-    const p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
-    [[p1.email,d.p1.email,'Phase 1 — initial email'],[p1.fu1,d.p1.fu1,'Phase 1 — +3d follow-up'],
-     [p1.fu2,d.p1.fu2,'Phase 1 — +5d follow-up'],[p1.fu3,d.p1.fu3,'Phase 1 — +7d follow-up'],
-     [p2.warn,false,'Phase 2 — 10-day heads-up'],[p2.email,d.p2.email,'Phase 2 — 6-month email'],
-     [p2.fu1,d.p2.fu1,'Phase 2 — +3d FU'],[p2.fu2,d.p2.fu2,'Phase 2 — +5d FU'],[p2.fu3,d.p2.fu3,'Phase 2 — +7d FU'],
-     [p3.warn30,false,'Expiry warning — 30 days left'],[p3.warn7,false,'Expiry warning — 7 days left!'],
-     [p3.email,d.p3.email,'Phase 3 — pre-expiry email'],[p3.fu1,d.p3.fu1,'Phase 3 — +3d FU'],
-     [p3.fu2,d.p3.fu2,'Phase 3 — +5d FU'],[p3.fu3,d.p3.fu3,'Phase 3 — +7d FU'],
-     ...(d.pricedrop.active&&pdd.fu1?[[pdd.fu1,d.pricedrop.fu1,'Price-drop +3d FU'],[pdd.fu2,d.pricedrop.fu2,'Price-drop +5d FU'],[pdd.fu3,d.pricedrop.fu3,'Price-drop +7d FU']]:[])
-    ].forEach(([dt,done,lbl])=>{if(!dt||done)return;if(isToday(dt))due.push({id:d.id,domain:d.domain,label:lbl,locName:d.locName||d.locTz,tz:d.locTz,dt});});
+    isDomainDueToday(d).forEach(function(item){
+      due.push({id:d.id,domain:d.domain,label:item.label,locName:d.locName||d.locTz,tz:d.locTz,dt:item.dt});
+    });
   });
   return due;
 }
@@ -1953,11 +2082,7 @@ function openDomainQuickView(id){
     [p3.fu2,d.p3.fu2,'P3 +5d FU'],
     [p3.fu3,d.p3.fu3,'P3 +7d FU']
   ];
-  if(d.pricedrop&&d.pricedrop.active&&pdd.fu1){
-    phaseItems.push([pdd.fu1,d.pricedrop.fu1,'Price-drop +3d FU']);
-    phaseItems.push([pdd.fu2,d.pricedrop.fu2,'Price-drop +5d FU']);
-    phaseItems.push([pdd.fu3,d.pricedrop.fu3,'Price-drop +7d FU']);
-  }
+
   // Also check interest follow-ups for this domain
   const domainInterests=interests.filter(function(i){return i.domain===d.domain&&!i.followUpDone&&i.followUp;});
 
@@ -2137,12 +2262,12 @@ function renderReminders(){
     if(d.sold)return;
     const p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
     const loc=d.locName||d.locTz||'Eastern';
-    [[p1.fu1,d.p1.fu1,'Phase 1 +3d FU'],[p1.fu2,d.p1.fu2,'Phase 1 +5d FU'],[p1.fu3,d.p1.fu3,'Phase 1 +7d FU'],
+    [[p1.email,d.p1.email,'Phase 1 initial email'],[p1.fu1,d.p1.fu1,'Phase 1 +3d FU'],[p1.fu2,d.p1.fu2,'Phase 1 +5d FU'],[p1.fu3,d.p1.fu3,'Phase 1 +7d FU'],
      [p2.warn,false,'Phase 2 alert'],[p2.email,d.p2.email,'Phase 2 6-month email'],
      [p2.fu1,d.p2.fu1,'Phase 2 +3d'],[p2.fu2,d.p2.fu2,'Phase 2 +5d'],[p2.fu3,d.p2.fu3,'Phase 2 +7d'],
      [p3.warn30,false,'30-day expiry warning'],[p3.warn7,false,'7-day expiry warning'],
      [p3.email,d.p3.email,'Phase 3 email'],[p3.fu1,d.p3.fu1,'Phase 3 +3d'],[p3.fu2,d.p3.fu2,'Phase 3 +5d'],[p3.fu3,d.p3.fu3,'Phase 3 +7d'],
-     ...(d.pricedrop.active&&pdd.fu1?[[pdd.fu1,d.pricedrop.fu1,'PD +3d'],[pdd.fu2,d.pricedrop.fu2,'PD +5d'],[pdd.fu3,d.pricedrop.fu3,'PD +7d']]:[])
+
     ].forEach(([dt,done,lbl])=>{if(!dt||done)return;const days=daysUntil(dt);allItems.push({domain:d.domain,label:lbl,dt,loc,tz:d.locTz,days});});
   });
   // Interest follow-ups — include overdue ones too
@@ -2207,38 +2332,25 @@ function reqNotif(){
   if(!('Notification' in window)){toast('Not supported','warn');return;}
   Notification.requestPermission().then(p=>{if(p==='granted'){toast('Notifications enabled!','success');scheduleAll();renderReminders();}else toast('Blocked — enable in browser settings','warn');});
 }
-let timers=[];
+var timers=[];
+// Uses isDomainDueToday() as single source of truth — same list as UI and Android.
+// Price-drop follow-up sequence removed — only phase dates trigger notifications.
 function scheduleAll(){
   timers.forEach(clearTimeout);timers=[];
   if(!('Notification' in window)||Notification.permission!=='granted')return;
-  const nowMs=Date.now();
-  domains.forEach(d=>{
+  var nowMs=Date.now();
+  domains.forEach(function(d){
     if(d.sold)return;
-    const tz=d.locTz||'America/New_York';
-    const p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
-    [
-      [p1.email,d.p1.email,'Phase 1 email'],
-      [p1.fu1,d.p1.fu1,'Phase 1 +3d FU'],[p1.fu2,d.p1.fu2,'Phase 1 +5d FU'],[p1.fu3,d.p1.fu3,'Phase 1 +7d FU'],
-      [p2.warn,false,'Phase 2 alert'],[p2.email,d.p2.email,'Phase 2 6-month email'],
-      [p2.fu1,d.p2.fu1,'Phase 2 +3d FU'],[p2.fu2,d.p2.fu2,'Phase 2 +5d FU'],[p2.fu3,d.p2.fu3,'Phase 2 +7d FU'],
-      [p3.warn30,false,'Expires in 30 days'],[p3.warn7,false,'Expires in 7 days!'],
-      [p3.email,d.p3.email,'Phase 3 email'],
-      [p3.fu1,d.p3.fu1,'Phase 3 +3d FU'],[p3.fu2,d.p3.fu2,'Phase 3 +5d FU'],[p3.fu3,d.p3.fu3,'Phase 3 +7d FU'],
-      ...(d.pricedrop&&d.pricedrop.active&&pdd.fu1?[
-        [pdd.fu1,d.pricedrop.fu1,'Price-drop +3d FU'],
-        [pdd.fu2,d.pricedrop.fu2,'Price-drop +5d FU'],
-        [pdd.fu3,d.pricedrop.fu3,'Price-drop +7d FU']
-      ]:[])
-    ].forEach(([dt,done,lbl])=>{
-      if(!dt||done)return;
+    var tz=d.locTz||'America/New_York';
+    isDomainDueToday(d).forEach(function(item){
       try{
-        const isoDate=toVal(dt);
-        const triggerMs=_tzTargetMs(isoDate,tz,8,0);
-        const ms=triggerMs-nowMs;
-        if(ms>0&&ms<86400000){
-          const domain=d.domain,label=lbl;
-          timers.push(setTimeout(()=>new Notification(`${domain} — ${label}`,{body:'Domain Portfolio Pro reminder'}),ms));
-        }
+        var isoDate=toVal(item.dt);
+        var triggerMs=_tzTargetMs(isoDate,tz,8,0);
+        var delay=Math.max(0,triggerMs-nowMs);
+        var domain=d.domain,label=item.label;
+        timers.push(setTimeout(function(){
+          try{new Notification(domain+' — '+label,{body:'Domain Portfolio Pro reminder'});}catch(e){}
+        },delay));
       }catch(e){}
     });
   });
@@ -2538,7 +2650,7 @@ function toast(msg,type='success'){
   t.style.background=type==='success'?'var(--green)':type==='warn'?'var(--amber)':'var(--red)';
   t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);
 }
-function nav(p,btn){
+function navPage(p,btn){
   document.querySelectorAll('.pg').forEach(x=>x.classList.remove('on'));
   document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));
   document.getElementById('pg-'+p).classList.add('on');
@@ -2736,7 +2848,7 @@ function downloadAllICS(){
      [p2.fu1,d.p2.fu1,'Phase 2 +3d'],[p2.fu2,d.p2.fu2,'Phase 2 +5d'],[p2.fu3,d.p2.fu3,'Phase 2 +7d'],
      [p3.warn30,false,'30-day expiry warning'],[p3.warn7,false,'7-day expiry warning'],
      [p3.email,d.p3.email,'Phase 3 email'],[p3.fu1,d.p3.fu1,'Phase 3 +3d'],[p3.fu2,d.p3.fu2,'Phase 3 +5d'],[p3.fu3,d.p3.fu3,'Phase 3 +7d'],
-     ...(d.pricedrop&&d.pricedrop.active&&pdd.fu1?[[pdd.fu1,d.pricedrop.fu1,'PD +3d'],[pdd.fu2,d.pricedrop.fu2,'PD +5d'],[pdd.fu3,d.pricedrop.fu3,'PD +7d']]:[])
+
     ].forEach(([dt,done,lbl])=>{
       if(!dt||done)return;
       allItems.push({domain:d.domain,label:lbl,dt,loc,tz:d.locTz,days:daysUntil(dt)});
@@ -2814,9 +2926,7 @@ function buildDomainICSEvents(d){
     [p3.email,'Phase 3 — pre-expiry email'],
     [p3.fu1,'Phase 3 — +3d FU'],[p3.fu2,'Phase 3 — +5d FU'],[p3.fu3,'Phase 3 — +7d FU']
   ];
-  if(d.pricedrop&&d.pricedrop.active&&pdd.fu1){
-    pairs.push([pdd.fu1,'Price-drop +3d FU'],[pdd.fu2,'Price-drop +5d FU'],[pdd.fu3,'Price-drop +7d FU']);
-  }
+
   pairs.forEach(function(pair){
     var dt=pair[0],lbl=pair[1];
     if(!dt)return;
@@ -2962,7 +3072,7 @@ function drawerNav(page){
   var btns=document.querySelectorAll('.nb');
   var btn=null;
   btns.forEach(function(b){ if(b.getAttribute('onclick') && b.getAttribute('onclick').indexOf("'"+page+"'")>-1) btn=b; });
-  nav(page,btn);
+  navPage(page,btn);
 }
 function toggleSection(id){
   var items=document.getElementById('sec-'+id);
@@ -3162,7 +3272,7 @@ function filterByCategory(el){
   document.querySelectorAll('.nb').forEach(function(b){
     if(b.getAttribute('onclick')&&b.getAttribute('onclick').indexOf("'domains'")>-1) btn=b;
   });
-  nav('domains',btn);
+  navPage('domains',btn);
   // Apply category filter after nav renders the page
   setTimeout(function(){
     var catSel=document.getElementById('s-cat');
@@ -3310,7 +3420,7 @@ function handleBackButton(){
     document.querySelectorAll('.nb').forEach(function(b){
       if(b.getAttribute('onclick')&&b.getAttribute('onclick').indexOf("'dashboard'")>-1) dashBtn=b;
     });
-    nav('dashboard',dashBtn);
+    navPage('dashboard',dashBtn);
     return true;
   }
   // 5. Already on dashboard — let Android handle (exit confirmation)
@@ -3650,58 +3760,40 @@ function _userTz() {
   return localStorage.getItem('dpp_user_tz') || 'Africa/Lagos';
 }
 
+// scheduleAndroidReminders: rebuilt to use isDomainDueToday() as single source of truth.
+// Price-drop follow-up sequence removed — price history is still recorded.
 window.scheduleAndroidReminders = function() {
   try {
     var items = [];
     var now = Date.now();
-    var userTz = _userTz(); // your timezone in Nigeria (WAT)
+    var userTz = _userTz();
 
     domains.forEach(function(d) {
       if (d.sold) return;
-      var tz = d.locTz || 'America/New_York'; // contact/buyer timezone
-      var p1 = getP1(d), p2 = getP2(d), p3 = getP3(d), pdd = getPD(d);
-      var pairs = [
-        [p1.fu1, d.p1.fu1, 'Phase 1 +3d FU'],
-        [p1.fu2, d.p1.fu2, 'Phase 1 +5d FU'],
-        [p1.fu3, d.p1.fu3, 'Phase 1 +7d FU'],
-        [p2.email, d.p2.email, 'Phase 2 6-month email'],
-        [p2.fu1, d.p2.fu1, 'Phase 2 +3d'],
-        [p2.fu2, d.p2.fu2, 'Phase 2 +5d'],
-        [p2.fu3, d.p2.fu3, 'Phase 2 +7d'],
-        [p3.warn30, false, '30-day expiry warning'],
-        [p3.warn7, false, '7-day expiry warning'],
-        [p3.email, d.p3.email, 'Phase 3 email'],
-        [p3.fu1, d.p3.fu1, 'Phase 3 +3d'],
-        [p3.fu2, d.p3.fu2, 'Phase 3 +5d'],
-        [p3.fu3, d.p3.fu3, 'Phase 3 +7d']
-      ];
-      if (d.pricedrop && d.pricedrop.active && pdd.fu1) {
-        pairs.push([pdd.fu1, d.pricedrop.fu1, 'PD +3d']);
-        pairs.push([pdd.fu2, d.pricedrop.fu2, 'PD +5d']);
-        pairs.push([pdd.fu3, d.pricedrop.fu3, 'PD +7d']);
-      }
-      pairs.forEach(function(pair) {
-        var dt = pair[0], done = pair[1], lbl = pair[2];
-        if (!dt || done) return;
-        try {
-          var isoDate = toVal(dt);
+      var tz = d.locTz || 'America/New_York';
 
-          // ── FIX: 8am in the CONTACT's US timezone (was broken before) ──
+      // Use isDomainDueToday() — single source of truth for what is due.
+      isDomainDueToday(d).forEach(function(item) {
+        try {
+          var isoDate = toVal(item.dt);
           var triggerMs = _tzTargetMs(isoDate, tz, 8, 0);
           if (triggerMs <= now) return;
 
-          var idHash = Math.abs((d.domain + lbl + isoDate).split('').reduce(function(a, c) {
+          var idHash = Math.abs((d.domain + item.label + isoDate).split('').reduce(function(a, c) {
             return (a << 5) - a + c.charCodeAt(0) | 0;
           }, 0));
 
-          // ── FIX: 6am WAT pre-notification (was never scheduled before) ──
-          // Gives you advance warning in Nigeria before the contact's 8am fires.
+          // Cancel any stale notification for this slot before scheduling
+          try { AndroidNotify.cancelNotification(idHash); } catch(e) {}
+          try { AndroidNotify.cancelNotification(idHash + 50000); } catch(e) {}
+
+          // 6am user-local pre-notification (advance warning in your timezone)
           var watPreMs = _tzTargetMs(isoDate, userTz, 6, 0);
           if (watPreMs > now) {
             items.push({
-              id: idHash + 50000, // +50000 offset avoids collision with main notification
-              title: '\u23F0 Today: ' + d.domain + ' \u2014 ' + lbl,
-              body: 'Your ' + lbl + ' for ' + d.domain + ' fires at 8am ' +
+              id: idHash + 50000,
+              title: '\u23F0 Today: ' + d.domain + ' \u2014 ' + item.label,
+              body: 'Your ' + item.label + ' for ' + d.domain + ' fires at 8am ' +
                     (d.locName || tz) + ' time. Prepare now!',
               triggerMs: watPreMs
             });
@@ -3710,21 +3802,19 @@ window.scheduleAndroidReminders = function() {
           // Main notification at 8am in the contact's timezone
           items.push({
             id: idHash,
-            title: d.domain + ' \u2014 ' + lbl,
-            body: lbl + ' for ' + d.domain + ' (' + (d.locName || tz) + ')',
+            title: d.domain + ' \u2014 ' + item.label,
+            body: item.label + ' for ' + d.domain + ' (' + (d.locName || tz) + ')',
             triggerMs: triggerMs
           });
         } catch(e) {}
       });
     });
 
-    // ── Interest follow-ups ──────────────────────────────────────────────────
+    // Interest follow-ups (unchanged — not affected by price-drop issue)
     interests.forEach(function(it) {
       if (!it.followUp || it.followUpDone) return;
       var fuDt = pd(it.followUp); if (!fuDt) return;
       try {
-        // ── FIX: Was 'T08:00:00' parsed as device-local WAT — ignored buyer tz.
-        // Now uses interest entry's tz field if present, else user home tz.
         var itTz = it.tz || userTz;
         var triggerMs = _tzTargetMs(it.followUp, itTz, 8, 0);
         if (triggerMs <= now) return;
@@ -3733,7 +3823,6 @@ window.scheduleAndroidReminders = function() {
           return (a << 5) - a + c.charCodeAt(0) | 0;
         }, 0));
 
-        // 6am WAT pre-notification for interest follow-ups
         var watPreMs = _tzTargetMs(it.followUp, userTz, 6, 0);
         if (watPreMs > now) {
           items.push({
@@ -3777,6 +3866,8 @@ function debouncedScheduleAndroid() {
 try{load();}catch(e){console.error('load() failed:',e);}
 try{renderDash();}catch(e){console.error('renderDash() failed:',e);}
 try{scheduleAll();}catch(e){console.error('scheduleAll() failed:',e);}
+// On startup: restore any snoozed notifications from persistent storage
+try{restoreSnoozedNotifications();}catch(e){console.error('restoreSnoozedNotifications failed:',e);}
 try{initDrawerSections();}catch(e){console.error('initDrawerSections() failed:',e);}
 try{renderDrawerMenu();}catch(e){console.error('renderDrawerMenu() failed:',e);}
 try{(function(){var t=localStorage.getItem("dpp_theme");if(t==="dark"){document.documentElement.setAttribute("data-theme","dark");var el=document.getElementById("theme-toggle");if(el)el.classList.add("on");}var tz=localStorage.getItem("dpp_user_tz")||"Africa/Lagos";var el2=document.getElementById("dr-tz");if(el2)el2.textContent=tz.split("/")[1]||tz;})();}catch(e){console.error('theme init failed:',e);}
