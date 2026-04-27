@@ -1151,22 +1151,22 @@ function clearForm(){
 // ── TIMELINE CALC ─────────────────────────────────────────────────────────────
 function getP1(d){
   const base=pd(d.regDate);if(!base)return{};
-  const e=pd(d.sent.p1email)||base,f1=pd(d.sent.p1fu1)||addD(e,3),f2=pd(d.sent.p1fu2)||addD(f1,5),f3=pd(d.sent.p1fu3)||addD(f2,7);
+  const e=pd(d.sent.p1email)||base,eNext=addD(e,1),f1=pd(d.sent.p1fu1)||addD(eNext,3),f2=pd(d.sent.p1fu2)||addD(f1,5),f3=pd(d.sent.p1fu3)||addD(f2,7);
   return{email:e,fu1:f1,fu2:f2,fu3:f3};
 }
 function getP2(d){
   const base=addM(pd(d.regDate),6);if(!base)return{};
-  const warn=addD(base,-10),e=pd(d.sent.p2email)||base,f1=pd(d.sent.p2fu1)||addD(e,3),f2=pd(d.sent.p2fu2)||addD(f1,5),f3=pd(d.sent.p2fu3)||addD(f2,7);
+  const warn=addD(base,-10),e=pd(d.sent.p2email)||base,eNext=addD(e,1),f1=pd(d.sent.p2fu1)||addD(eNext,3),f2=pd(d.sent.p2fu2)||addD(f1,5),f3=pd(d.sent.p2fu3)||addD(f2,7);
   return{warn,email:e,fu1:f1,fu2:f2,fu3:f3};
 }
 function getP3(d){
   const expDt=pd(d.expiry);if(!expDt)return{};
-  const w30=addD(expDt,-30),w7=addD(expDt,-7),e=pd(d.sent.p3email)||w30,f1=pd(d.sent.p3fu1)||addD(e,3),f2=pd(d.sent.p3fu2)||addD(f1,5),f3=pd(d.sent.p3fu3)||addD(f2,7);
+  const w30=addD(expDt,-30),w7=addD(expDt,-7),e=pd(d.sent.p3email)||w30,eNext=addD(e,1),f1=pd(d.sent.p3fu1)||addD(eNext,3),f2=pd(d.sent.p3fu2)||addD(f1,5),f3=pd(d.sent.p3fu3)||addD(f2,7);
   return{warn30:w30,warn7:w7,email:e,fu1:f1,fu2:f2,fu3:f3};
 }
 function getPD(d){
   if(!d.pricedrop||!d.pricedrop.active||!d.pricedrop.date)return{};
-  const base=pd(d.pricedrop.date),f1=pd(d.sent.pdfu1)||addD(base,3),f2=pd(d.sent.pdfu2)||addD(f1,5),f3=pd(d.sent.pdfu3)||addD(f2,7);
+  const base=addD(pd(d.pricedrop.date),1),f1=pd(d.sent.pdfu1)||addD(base,3),f2=pd(d.sent.pdfu2)||addD(f1,5),f3=pd(d.sent.pdfu3)||addD(f2,7);
   return{fu1:f1,fu2:f2,fu3:f3};
 }
 
@@ -1614,7 +1614,7 @@ function updPrice(id){
   const d=domains.find(x=>x.id==id);if(!d)return;
   const np=parseFloat(document.getElementById('np-'+id).value);
   if(!np||isNaN(np)){toast('Enter valid price','warn');return;}
-  const drop=np<(d.listPrice||0);
+  const drop=np<(d.listPrice||0)&&(d.listPrice||0)>0;
   if(!d.priceHistory)d.priceHistory=[];
   d.priceHistory.push({price:np,date:toVal(new Date()),note:drop?`Drop from $${(d.listPrice||0).toLocaleString()}`:`Rise from $${(d.listPrice||0).toLocaleString()}`});
   d.listPrice=np;
@@ -2037,13 +2037,35 @@ let timers=[];
 function scheduleAll(){
   timers.forEach(clearTimeout);timers=[];
   if(!('Notification' in window)||Notification.permission!=='granted')return;
+  const nowMs=Date.now();
   domains.forEach(d=>{
     if(d.sold)return;
     const tz=d.locTz||'America/New_York';
-    const p1=getP1(d),p2=getP2(d),p3=getP3(d);
-    [[p1.fu1,'FU1'],[p1.fu2,'FU2'],[p1.fu3,'FU3'],[p2.email,'6-month email'],[p3.warn30,'Expires 30 days'],[p3.warn7,'Expires 7 days!']].forEach(([dt,lbl])=>{
-      if(!dt)return;
-      try{const am8=new Date(new Date().toLocaleDateString('en-US',{timeZone:tz})+' 08:00:00');const ms=am8-Date.now();if(ms>0&&ms<86400000)timers.push(setTimeout(()=>new Notification(`${d.domain} — ${lbl}`,{body:'Domain Portfolio Pro reminder'}),ms));}catch(e){}
+    const p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
+    [
+      [p1.email,d.p1.email,'Phase 1 email'],
+      [p1.fu1,d.p1.fu1,'Phase 1 +3d FU'],[p1.fu2,d.p1.fu2,'Phase 1 +5d FU'],[p1.fu3,d.p1.fu3,'Phase 1 +7d FU'],
+      [p2.warn,false,'Phase 2 alert'],[p2.email,d.p2.email,'Phase 2 6-month email'],
+      [p2.fu1,d.p2.fu1,'Phase 2 +3d FU'],[p2.fu2,d.p2.fu2,'Phase 2 +5d FU'],[p2.fu3,d.p2.fu3,'Phase 2 +7d FU'],
+      [p3.warn30,false,'Expires in 30 days'],[p3.warn7,false,'Expires in 7 days!'],
+      [p3.email,d.p3.email,'Phase 3 email'],
+      [p3.fu1,d.p3.fu1,'Phase 3 +3d FU'],[p3.fu2,d.p3.fu2,'Phase 3 +5d FU'],[p3.fu3,d.p3.fu3,'Phase 3 +7d FU'],
+      ...(d.pricedrop&&d.pricedrop.active&&pdd.fu1?[
+        [pdd.fu1,d.pricedrop.fu1,'Price-drop +3d FU'],
+        [pdd.fu2,d.pricedrop.fu2,'Price-drop +5d FU'],
+        [pdd.fu3,d.pricedrop.fu3,'Price-drop +7d FU']
+      ]:[])
+    ].forEach(([dt,done,lbl])=>{
+      if(!dt||done)return;
+      try{
+        const isoDate=toVal(dt);
+        const triggerMs=_tzTargetMs(isoDate,tz,8,0);
+        const ms=triggerMs-nowMs;
+        if(ms>0&&ms<86400000){
+          const domain=d.domain,label=lbl;
+          timers.push(setTimeout(()=>new Notification(`${domain} — ${label}`,{body:'Domain Portfolio Pro reminder'}),ms));
+        }
+      }catch(e){}
     });
   });
 }
