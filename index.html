@@ -1838,32 +1838,29 @@ function setSentDate(id,key,ph,phKey,val){
 
   // Auto-calculate follow-up dates for notification scheduling + red/blue display.
   // Does NOT mark steps as sent — checkboxes stay unchecked until user confirms.
+  // FIX: Guards `if(!d.sent[nextKey])` removed — always recalculate downstream
+  // dates from the new base so that correcting a wrong date cascades properly.
   const NEXT={
     p1email:['p1fu1',3], p1fu1:['p1fu2',5], p1fu2:['p1fu3',7],
     p2email:['p2fu1',3], p2fu1:['p2fu2',5], p2fu2:['p2fu3',7],
     p3email:['p3fu1',3], p3fu1:['p3fu2',5], p3fu2:['p3fu3',7],
   };
   if(val&&NEXT[key]){
-    const [nextKey,days]=NEXT[key];
-    if(!d.sent[nextKey]){
-      const base=new Date(val+'T12:00:00');
+    // Walk the full chain (up to 3 hops: email→fu1→fu2→fu3) so Follow-up 3
+    // is always filled. Previous code only walked 2 hops and missed fu3.
+    const syncKeys=[];
+    let curKey=key;
+    while(NEXT[curKey]){
+      const [nextKey,days]=NEXT[curKey];
+      const base=new Date(d.sent[curKey]+'T12:00:00');
       base.setDate(base.getDate()+days);
       d.sent[nextKey]=toVal(base);
-    }
-    const NEXT2=NEXT[nextKey];
-    if(NEXT2){
-      const [nextKey2,days2]=NEXT2;
-      if(!d.sent[nextKey2]){
-        const base2=new Date(d.sent[nextKey]+'T12:00:00');
-        base2.setDate(base2.getDate()+days2);
-        d.sent[nextKey2]=toVal(base2);
-      }
+      syncKeys.push(nextKey);
+      curKey=nextKey;
     }
     // Sync proxy button display text directly — NO dispatchEvent (prevents phantom picker opens)
-    const syncKeys=[NEXT[key][0]];
-    if(NEXT2) syncKeys.push(NEXT2[0]);
     syncKeys.forEach(function(nk){
-      const inp=document.querySelector("input[onchange*='setSentDate']") ? Array.from(document.querySelectorAll("input[onchange]")).find(function(el){var oc=el.getAttribute('onchange')||'';return oc.indexOf("setSentDate('" + id + "','" + nk + "'") !== -1;}) : null;
+      const inp=Array.from(document.querySelectorAll("input[onchange]")).find(function(el){var oc=el.getAttribute('onchange')||'';return oc.indexOf("setSentDate('" + id + "','" + nk + "'") !== -1;});
       if(inp&&d.sent[nk]){
         inp.value=d.sent[nk];
         const btn=inp.parentNode&&inp.parentNode.querySelector('button');
