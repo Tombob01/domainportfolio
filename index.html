@@ -174,6 +174,18 @@ input[type=date]::-webkit-clear-button{display:none}
 /* ── TIMELINE ── */
 .tl{margin-top:12px;display:flex;flex-direction:column;gap:6px}
 .tl-row{display:flex;align-items:flex-start;gap:10px}
+.rh-cycle{border:1px solid var(--border);border-radius:var(--rs);margin-bottom:10px;overflow:hidden}
+.rh-cycle-hdr{background:var(--bg2);padding:9px 13px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none}
+.rh-cycle-title{font-size:12px;font-weight:800;color:var(--text)}
+.rh-cycle-meta{font-size:11px;color:var(--text3)}
+.rh-cycle-body{padding:10px 13px;display:none}
+.rh-cycle-body.open{display:block}
+.rh-phase-lbl{font-size:11px;font-weight:800;color:var(--text2);margin:8px 0 4px;text-transform:uppercase;letter-spacing:.04em}
+.rh-step{display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0;border-bottom:1px solid var(--border)}
+.rh-step:last-child{border:none}
+.rh-step-icon{font-size:11px;width:14px;text-align:center;flex-shrink:0}
+.rh-step-name{flex:1;color:var(--text2)}
+.rh-step-date{font-size:11px;color:var(--text3);white-space:nowrap}
 .tl-lbl{font-size:10px;font-weight:800;color:var(--text3);width:80px;flex-shrink:0;padding-top:5px;text-transform:uppercase;letter-spacing:.06em}
 .tl-steps{display:flex;flex-wrap:wrap;gap:5px;flex:1}
 .step{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);transition:all .15s}
@@ -1205,6 +1217,7 @@ function getPD(d){ return {}; }
 function isDomainDueToday(d) {
   if (!d || d.sold) return [];
   var p1 = getP1(d), p2 = getP2(d), p3 = getP3(d), pdd = getPD(d);
+  var expDt = pd(d.expiry); // needed for expiry-day notification candidate
 
   var candidates = [
     [p1.email,  d.p1.email,      'Phase 1 initial email'],
@@ -1218,6 +1231,7 @@ function isDomainDueToday(d) {
     [p2.fu3,    d.p2.fu3,        'Phase 2 +7d FU'],
     [p3.warn30, false,           'Expiry warning — 30 days left'],
     [p3.warn7,  false,           'Expiry warning — 7 days left!'],
+    [expDt,     false,           'Domain expired today — renew now!'],
     [p3.email,  d.p3.email,      'Phase 3 pre-expiry email'],
     [p3.fu1,    d.p3.fu1,        'Phase 3 +3d FU'],
     [p3.fu2,    d.p3.fu2,        'Phase 3 +5d FU'],
@@ -1230,7 +1244,10 @@ function isDomainDueToday(d) {
   candidates.forEach(function(row) {
     var dt = row[0], done = row[1], lbl = row[2];
     if (!dt || done) return;
-    if (isToday(dt)) due.push({dt: dt, done: done, label: lbl});
+    if (isToday(dt)) {
+      console.log('[DPP] isDomainDueToday: ' + d.domain + ' — DUE: ' + lbl + ' (' + toVal(dt) + ')');
+      due.push({dt: dt, done: done, label: lbl});
+    }
   });
   return due;
 }
@@ -1281,65 +1298,103 @@ function scheduleDomainNotification(domainObj, triggerIsoDate, label) {
 
 // ── SNOOZE HANDLER ────────────────────────────────────────────────────────────
 // Called by Android when user taps "Snooze 1 day" on a notification.
-// domainId: the domain.id string
-// label: the notification label (must match exactly what was scheduled)
-// This cancels the current notification, persists the snooze, and reschedules
-// for 8am tomorrow in the domain's timezone.
-window.onSnoozeNotification = function(domainId, label) {
+// domainId: domain.id string  |  label: exact label string used when scheduled
+// todayIso: 'YYYY-MM-DD' of the day being snoozed (passed by Android so we can
+//           compute the exact same idHash that was used when scheduling)
+window.onSnoozeNotification = function(domainId, label, todayIso) {
   try {
+    // Guard: domain must still exist and must not be sold
     var d = domains.find(function(x) { return x.id == domainId; });
-    if (!d) return;
+    if (!d) {
+      console.warn('[DPP] onSnoozeNotification: domain not found, id=' + domainId);
+      return;
+    }
+    if (d.sold) {
+      console.warn('[DPP] onSnoozeNotification: domain is sold, ignoring. domain=' + d.domain);
+      return;
+    }
+
+    var tz = d.locTz || 'America/New_York';
+
+    // Use passed todayIso if available; fall back to today in domain tz
+    var sourceIso = todayIso || new Date().toLocaleDateString('en-CA', { timeZone: tz });
+
+    // Cancel the existing notification using the SAME idHash formula used when scheduling
+    // (domain + label + sourceIso — must be identical to scheduleAndroidReminders)
+    var idHash = Math.abs((d.domain + label + sourceIso).split('').reduce(function(a, c) {
+      return (a << 5) - a + c.charCodeAt(0) | 0;
+    }, 0));
+    try {
+      if (typeof AndroidNotify !== 'undefined') {
+        AndroidNotify.cancelNotification(idHash);
+        AndroidNotify.cancelNotification(idHash + 50000);
+        console.log('[DPP] onSnoozeNotification: cancelled ids ' + idHash + ', ' + (idHash + 50000));
+      }
+    } catch(e) {}
 
     // Tomorrow's date in the domain's timezone
-    var tz = d.locTz || 'America/New_York';
-    var nowInTz = new Date().toLocaleDateString('en-CA', { timeZone: tz });
-    var tomorrowDt = new Date(nowInTz + 'T12:00:00');
+    var tomorrowDt = new Date(sourceIso + 'T12:00:00');
     tomorrowDt.setDate(tomorrowDt.getDate() + 1);
     var tomorrowIso = toVal(tomorrowDt);
 
-    // Persist snooze so it survives app restart
+    // Persist snooze to both localStorage and Android SharedPreferences
     var snoozeKey = 'dpp_snooze_' + domainId + '_' + label.replace(/[^a-zA-Z0-9]/g, '_');
     try { localStorage.setItem(snoozeKey, tomorrowIso); } catch(e) {}
     try { _aSet(snoozeKey, tomorrowIso); } catch(e) {}
 
-    // Cancel current notification IDs for this slot
-    var idHash = Math.abs((d.domain + label + toVal(new Date())).split('').reduce(function(a, c) {
-      return (a << 5) - a + c.charCodeAt(0) | 0;
-    }, 0));
-    try { if (typeof AndroidNotify !== 'undefined') { AndroidNotify.cancelNotification(idHash); AndroidNotify.cancelNotification(idHash + 50000); } } catch(e) {}
-
-    // Schedule for tomorrow using unified function
+    // Schedule for tomorrow via the unified scheduler
     scheduleDomainNotification(d, tomorrowIso, label);
-    toast('\u23F0 Snoozed — will remind again tomorrow at 8am ' + (d.locName || tz), 'success');
-  } catch(e) { console.error('onSnoozeNotification failed:', e); }
+    console.log('[DPP] onSnoozeNotification: snoozed ' + d.domain + ' / ' + label + ' -> ' + tomorrowIso + ' (8am ' + tz + ')');
+    toast('\u23F0 Snoozed \u2014 will remind again tomorrow at 8am ' + (d.locName || tz), 'success');
+  } catch(e) { console.error('[DPP] onSnoozeNotification failed:', e); }
 };
 
-// Restore snoozed notifications on app startup.
-// Any snooze that is still in the future gets rescheduled via AndroidNotify.
+// restoreSnoozedNotifications: called once on startup after cancelAllAndRebuild().
+// Reads all dpp_snooze_* keys, cleans up expired ones, and reschedules live ones
+// via scheduleDomainNotification() — the same unified scheduler used everywhere.
 function restoreSnoozedNotifications() {
   var prefix = 'dpp_snooze_';
   var todayIso = toVal(new Date());
+  var restored = 0, cleaned = 0;
   try {
     Object.keys(localStorage).forEach(function(k) {
       if (k.indexOf(prefix) !== 0) return;
       var isoDate = localStorage.getItem(k);
+
+      // Expired snooze — clean up
       if (!isoDate || isoDate < todayIso) {
-        // Snooze date is past — clean up
         try { localStorage.removeItem(k); } catch(e) {}
+        console.log('[DPP] restoreSnoozed: cleaned expired key ' + k);
+        cleaned++;
         return;
       }
-      // Parse domainId and label back from key: dpp_snooze_<id>_<label>
+
+      // Parse domainId and label from key: dpp_snooze_<domainId>_<label_underscored>
       var rest = k.slice(prefix.length);
-      // Find which domain id matches
       var domainObj = null;
       domains.forEach(function(d) {
         if (rest.indexOf(d.id) === 0) domainObj = d;
       });
-      if (!domainObj) return;
+
+      // Guard: domain must exist and not be sold
+      if (!domainObj) {
+        console.warn('[DPP] restoreSnoozed: no domain found for key ' + k + ' — removing');
+        try { localStorage.removeItem(k); } catch(e) {}
+        return;
+      }
+      if (domainObj.sold) {
+        console.warn('[DPP] restoreSnoozed: domain is sold (' + domainObj.domain + ') — removing snooze key ' + k);
+        try { localStorage.removeItem(k); } catch(e) {}
+        return;
+      }
+
       var label = rest.slice(domainObj.id.length + 1).replace(/_/g, ' ');
       scheduleDomainNotification(domainObj, isoDate, label);
+      console.log('[DPP] restoreSnoozed: rescheduled ' + domainObj.domain + ' / ' + label + ' for ' + isoDate);
+      restored++;
     });
-  } catch(e) { console.error('restoreSnoozedNotifications failed:', e); }
+    console.log('[DPP] restoreSnoozedNotifications complete: ' + restored + ' restored, ' + cleaned + ' cleaned up');
+  } catch(e) { console.error('[DPP] restoreSnoozedNotifications failed:', e); }
 }
 
 // ── ADD DOMAIN ────────────────────────────────────────────────────────────────
@@ -1421,7 +1476,10 @@ function renderCard(d){
     </div></div>`:''}
 
   </div>
-  <div style="margin-top:10px"><button class="btn-ghost" onclick="toggleDet('${d.id}')">▾ Edit dates, emails & options</button></div>
+  <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <button class="btn-ghost" onclick="toggleDet('${d.id}')">▾ Edit dates, emails & options</button>
+    ${(!d.sold&&expDt&&(expDays!==null)&&(expDays<=30))?`<button class="btn btn-sm" style="background:var(--green);color:#fff;border-color:var(--green);font-size:11px" onclick="markRenewed('${d.id}')">🔄 Mark Renewed</button>`:''}
+  </div>
   <div class="det" id="det-${d.id}">
     <div class="det-back">
       <button class="btn btn-sm" onclick="toggleDet('${d.id}')" style="display:inline-flex;align-items:center;gap:5px;font-weight:700">← Back</button>
@@ -1432,6 +1490,7 @@ function renderCard(d){
       <button class="dtab" onclick="switchTab('${d.id}','emaillog',this)">Email log</button>
       <button class="dtab" onclick="switchTab('${d.id}','interest',this)">Interests</button>
       <button class="dtab" onclick="switchTab('${d.id}','manage',this)">Status & price</button>
+      ${(d.renewalHistory&&d.renewalHistory.length)?`<button class="dtab" onclick="switchTab('${d.id}','renewal',this)">Renewal history <span style="font-size:10px;background:var(--blue-lt);color:var(--blue-tx);border-radius:20px;padding:1px 6px;margin-left:3px">${d.renewalHistory.length}</span></button>`:''}
     </div>
 
     <div class="dtab-pane on" id="tab-dates-${d.id}">
@@ -1526,6 +1585,53 @@ function renderCard(d){
         </div>
       </div>
     </div>
+
+    ${(d.renewalHistory&&d.renewalHistory.length)?`
+    <div class="dtab-pane" id="tab-renewal-${d.id}">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Full outreach history for each renewal cycle, most recent first.</div>
+      ${(function(){
+        if(!d.renewalHistory||!d.renewalHistory.length) return '';
+        return d.renewalHistory.slice().reverse().map(function(cycle,ci){
+          var steps=[
+            {phase:'Phase 1',label:'Initial email',     done:cycle.p1.email, date:cycle.sent.p1email},
+            {phase:'Phase 1',label:'+3d follow-up',     done:cycle.p1.fu1,   date:cycle.sent.p1fu1},
+            {phase:'Phase 1',label:'+5d follow-up',     done:cycle.p1.fu2,   date:cycle.sent.p1fu2},
+            {phase:'Phase 1',label:'+7d follow-up',     done:cycle.p1.fu3,   date:cycle.sent.p1fu3},
+            {phase:'Phase 2',label:'6-month email',     done:cycle.p2.email, date:cycle.sent.p2email},
+            {phase:'Phase 2',label:'+3d follow-up',     done:cycle.p2.fu1,   date:cycle.sent.p2fu1},
+            {phase:'Phase 2',label:'+5d follow-up',     done:cycle.p2.fu2,   date:cycle.sent.p2fu2},
+            {phase:'Phase 2',label:'+7d follow-up',     done:cycle.p2.fu3,   date:cycle.sent.p2fu3},
+            {phase:'Phase 3',label:'Pre-expiry email',  done:cycle.p3.email, date:cycle.sent.p3email},
+            {phase:'Phase 3',label:'+3d follow-up',     done:cycle.p3.fu1,   date:cycle.sent.p3fu1},
+            {phase:'Phase 3',label:'+5d follow-up',     done:cycle.p3.fu2,   date:cycle.sent.p3fu2},
+            {phase:'Phase 3',label:'+7d follow-up',     done:cycle.p3.fu3,   date:cycle.sent.p3fu3}
+          ];
+          var phases=['Phase 1','Phase 2','Phase 3'];
+          var completedCount=steps.filter(function(s){return s.done;}).length;
+          var phaseRows=phases.map(function(ph){
+            var phSteps=steps.filter(function(s){return s.phase===ph;});
+            var stepRows=phSteps.map(function(s){
+              return '<div class="rh-step">'
+                +'<span class="rh-step-icon" style="color:'+(s.done?'var(--green)':'var(--text3)')+'">'+( s.done?'&#10003;':'&#10007;')+'</span>'
+                +'<span class="rh-step-name">'+s.label+'</span>'
+                +'<span class="rh-step-date">'+(s.done?(s.date?s.date:'Done \u2014 date not recorded'):'Not sent')+'</span>'
+                +'</div>';
+            }).join('');
+            return '<div class="rh-phase-lbl">'+ph+'</div>'+stepRows;
+          }).join('');
+          return '<div class="rh-cycle">'
+            +'<div class="rh-cycle-hdr" onclick="this.nextElementSibling.classList.toggle(\'open\')">'
+            +'<div>'
+            +'<div class="rh-cycle-title">Cycle '+cycle.fromExpiry+' \u2192 '+cycle.toExpiry+'</div>'
+            +'<div class="rh-cycle-meta">Renewed '+cycle.renewedOn+' &middot; '+completedCount+'/12 steps completed</div>'
+            +'</div>'
+            +'<span style="font-size:16px;color:var(--text3)">\u25be</span>'
+            +'</div>'
+            +'<div class="rh-cycle-body'+(ci===0?' open':'')+'">'+phaseRows+'</div>'
+            +'</div>';
+        }).join('');
+      })()}
+    </div>`:''}
   </div>
 </div>`;
 }
@@ -1542,6 +1648,7 @@ function switchTab(id,tab,btn){
     if(fuInp) fuInp.value=getNextPhaseFuDate(id)||toVal(addD(new Date(),2));
   }
   if(tab==='interest') renderInterestInline(id);
+  // renewal tab is static HTML — no dynamic render needed
 }
 
 // Returns the next uncompleted phase follow-up date (ISO string) for a domain,
@@ -1787,7 +1894,10 @@ function updPrice(id){
   d.priceHistory.push({price:np,date:toVal(new Date()),note:drop?`Drop from $${(d.listPrice||0).toLocaleString()}`:`Rise from $${(d.listPrice||0).toLocaleString()}`});
   d.listPrice=np;
   toast(drop ? 'Price updated — drop recorded in price history' : 'Price updated','success');
-  save();renderDomains();scheduleAll();try{debouncedScheduleAndroid();}catch(e){}
+  // NOTE: No debouncedScheduleAndroid() here — price changes do not affect
+  // any phase date, so isDomainDueToday() returns the same result before and after.
+  // Scheduling from here would only create unnecessary alarm churn.
+  save();renderDomains();
 }
 function setSold(id,v){const d=domains.find(x=>x.id==id);if(!d)return;d.sold=v;d.status=v?'Sold':'Active';save();}
 function saveSold(id){
@@ -2196,11 +2306,64 @@ function openDomainDetail(id){
 
 function markRenewed(id){
   const d=domains.find(x=>x.id==id);if(!d)return;
-  const base=pd(d.expiry)&&pd(d.expiry)>today()?pd(d.expiry):new Date();
-  base.setFullYear(base.getFullYear()+1);
-  d.expiry=toVal(base);
+
+  // ── 1. Snapshot current cycle into renewalHistory BEFORE wiping ──────────
+  if(!d.renewalHistory) d.renewalHistory=[];
+  const oldExpiry=d.expiry||'';
+  const newBase=pd(d.expiry)&&pd(d.expiry)>today()?pd(d.expiry):new Date();
+  newBase.setFullYear(newBase.getFullYear()+1);
+  const newExpiry=toVal(newBase);
+
+  // Archive: capture year range, renewal date, and all phase states with dates
+  d.renewalHistory.push({
+    renewedOn: toVal(new Date()),
+    fromExpiry: oldExpiry ? oldExpiry.substring(0,4) : '—',
+    toExpiry:   newExpiry.substring(0,4),
+    // Deep-copy all phase flags and sent dates at time of renewal
+    p1: Object.assign({},d.p1),
+    p2: Object.assign({},d.p2),
+    p3: Object.assign({},d.p3),
+    sent: Object.assign({},d.sent)
+  });
+
+  // ── 2. Roll expiry and registration date forward ──────────────────────────
+  d.expiry   = newExpiry;
+  d.regDate  = toVal(new Date()); // renewal date becomes new registration anchor
+
+  // ── 3. Reset ALL phase flags — fresh outreach slate ───────────────────────
+  d.p1  = {email:false,fu1:false,fu2:false,fu3:false};
+  d.p2  = {email:false,fu1:false,fu2:false,fu3:false};
+  d.p3  = {email:false,fu1:false,fu2:false,fu3:false};
+
+  // ── 4. Wipe all sent dates — follow-ups recalculate from new regDate ──────
+  d.sent = {
+    p1email:'',p1fu1:'',p1fu2:'',p1fu3:'',
+    p2email:'',p2fu1:'',p2fu2:'',p2fu3:'',
+    p3email:'',p3fu1:'',p3fu2:'',p3fu3:'',
+    pdfu1:'',pdfu2:'',pdfu3:''
+  };
+
+  // ── 5. Reset status so domain re-enters outreach cycle ────────────────────
+  if(!d.sold) d.status='Not Contacted';
+
+  // ── 6. Cancel any live expiry-day notification for this domain ────────────
+  if(typeof AndroidNotify!=='undefined'){
+    var expIso=oldExpiry;
+    var expIdHash=Math.abs((d.domain+'Domain expired today — renew now!'+expIso).split('').reduce(function(a,c){
+      return(a<<5)-a+c.charCodeAt(0)|0;
+    },0));
+    try{AndroidNotify.cancelNotification(expIdHash);}catch(e){}
+    try{AndroidNotify.cancelNotification(expIdHash+50000);}catch(e){}
+    console.log('[DPP] markRenewed: cancelled expiry notification for '+d.domain);
+  }
+
   save();renderDash();renderDomains();
-  toast(`${d.domain} renewed — expiry set to ${fmt(base)}`,'success');
+
+  // ── 7. Rebuild all notifications from clean slate ─────────────────────────
+  try{debouncedScheduleAndroid();}catch(e){}
+
+  toast(d.domain+' renewed — cycle archived, outreach restarting from Phase 1','success');
+  console.log('[DPP] markRenewed: '+d.domain+' renewed. History cycles: '+d.renewalHistory.length);
 }
 
 // ── EMAIL ACCOUNTS PAGE ───────────────────────────────────────────────────────
@@ -2250,6 +2413,9 @@ function removeEmailAccount(i){
 }
 
 // ── REMINDERS ─────────────────────────────────────────────────────────────────
+// renderReminders: uses isDomainDueToday() as single source of truth.
+// This guarantees the Reminders page shows EXACTLY what triggers notifications —
+// no item can notify without appearing here, and nothing here fails to notify.
 function renderReminders(){
   const pb=document.getElementById('notif-btn'),ps=document.getElementById('notif-st');
   if('Notification' in window){
@@ -2257,25 +2423,45 @@ function renderReminders(){
     else if(Notification.permission==='denied') ps.textContent='Blocked — Settings → Site settings → Notifications → Allow.';
   }else ps.textContent='Browser notifications not supported.';
 
-  const allItems=[];const now=today();
+  const allItems=[];
+  // ── Domain reminders: use isDomainDueToday() for today items, but for the
+  // Reminders page we also need upcoming/overdue items. So we replicate the
+  // candidate list from isDomainDueToday() but without the isToday() filter.
   domains.forEach(d=>{
     if(d.sold)return;
-    const p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
-    const loc=d.locName||d.locTz||'Eastern';
-    [[p1.email,d.p1.email,'Phase 1 initial email'],[p1.fu1,d.p1.fu1,'Phase 1 +3d FU'],[p1.fu2,d.p1.fu2,'Phase 1 +5d FU'],[p1.fu3,d.p1.fu3,'Phase 1 +7d FU'],
-     [p2.warn,false,'Phase 2 alert'],[p2.email,d.p2.email,'Phase 2 6-month email'],
-     [p2.fu1,d.p2.fu1,'Phase 2 +3d'],[p2.fu2,d.p2.fu2,'Phase 2 +5d'],[p2.fu3,d.p2.fu3,'Phase 2 +7d'],
-     [p3.warn30,false,'30-day expiry warning'],[p3.warn7,false,'7-day expiry warning'],
-     [p3.email,d.p3.email,'Phase 3 email'],[p3.fu1,d.p3.fu1,'Phase 3 +3d'],[p3.fu2,d.p3.fu2,'Phase 3 +5d'],[p3.fu3,d.p3.fu3,'Phase 3 +7d'],
-
-    ].forEach(([dt,done,lbl])=>{if(!dt||done)return;const days=daysUntil(dt);allItems.push({domain:d.domain,label:lbl,dt,loc,tz:d.locTz,days});});
+    var p1=getP1(d),p2=getP2(d),p3=getP3(d);
+    var loc=d.locName||d.locTz||'Eastern';
+    // EXACT same candidate list as isDomainDueToday() — no extra items, no missing items
+    [
+      [p1.email,  d.p1.email,  'Phase 1 initial email'],
+      [p1.fu1,    d.p1.fu1,    'Phase 1 +3d FU'],
+      [p1.fu2,    d.p1.fu2,    'Phase 1 +5d FU'],
+      [p1.fu3,    d.p1.fu3,    'Phase 1 +7d FU'],
+      [p2.warn,   false,       'Phase 2 alert'],
+      [p2.email,  d.p2.email,  'Phase 2 6-month email'],
+      [p2.fu1,    d.p2.fu1,    'Phase 2 +3d'],
+      [p2.fu2,    d.p2.fu2,    'Phase 2 +5d'],
+      [p2.fu3,    d.p2.fu3,    'Phase 2 +7d'],
+      [p3.warn30, false,       '30-day expiry warning'],
+      [p3.warn7,  false,       '7-day expiry warning'],
+      [p3.email,  d.p3.email,  'Phase 3 email'],
+      [p3.fu1,    d.p3.fu1,    'Phase 3 +3d'],
+      [p3.fu2,    d.p3.fu2,    'Phase 3 +5d'],
+      [p3.fu3,    d.p3.fu3,    'Phase 3 +7d']
+      // NOTE: no price-drop entries — removed (Option C)
+    ].forEach(function(row){
+      var dt=row[0],done=row[1],lbl=row[2];
+      if(!dt||done)return;
+      var days=daysUntil(dt);
+      allItems.push({domain:d.domain,label:lbl,dt:dt,loc:loc,tz:d.locTz,days:days});
+    });
   });
   // Interest follow-ups — include overdue ones too
-  interests.forEach(it=>{
+  interests.forEach(function(it){
     if(!it.followUp||it.followUpDone)return;
     const fuDt=pd(it.followUp);if(!fuDt)return;
     const days=daysUntil(fuDt);
-    allItems.push({domain:it.domain,label:`Interest follow-up (${it.email})`,dt:fuDt,loc:'',tz:'',days,isInterest:true,iid:it.id});
+    allItems.push({domain:it.domain,label:'Interest follow-up ('+it.email+')',dt:fuDt,loc:'',tz:'',days:days,isInterest:true,iid:it.id});
   });
   allItems.sort((a,b)=>a.dt-b.dt);
 
@@ -2465,8 +2651,20 @@ function renderInterests(){
 
 function markFUDone(iid){
   const it=interests.find(x=>x.id===iid);if(!it)return;
-  it.followUpDone=true;save();renderInterests();
-  // Re-render any open inline panel
+  it.followUpDone=true;save();
+
+  // Cancel the Android alarm for this interest follow-up so it doesn't
+  // fire later today even though the user already marked it done.
+  if(typeof AndroidNotify!=='undefined'&&it.followUp){
+    var idHash=Math.abs(('int_'+it.id).split('').reduce(function(a,c){
+      return(a<<5)-a+c.charCodeAt(0)|0;
+    },0));
+    try{AndroidNotify.cancelNotification(idHash);}catch(e){}
+    try{AndroidNotify.cancelNotification(idHash+50000);}catch(e){}
+    console.log('[DPP] markFUDone: cancelled notification id='+idHash+' for '+it.domain);
+  }
+
+  renderInterests();
   const d=domains.find(x=>x.domain===it.domain);
   if(d) renderInterestInline(d.id);
   toast('Follow-up marked done','success');
@@ -2480,7 +2678,17 @@ function removeInterest(iid){
     <div style="font-size:15px;font-weight:800;margin-bottom:8px;color:var(--text)">Remove interest entry?</div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:18px">${it.domain} · ${it.email}</div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-primary" style="flex:1;background:var(--red);border-color:var(--red)" onclick="(function(){interests=interests.filter(x=>x.id!=='${iid}');save();renderInterests();toast('Removed','success');this.closest('[style*=fixed]').remove();}).call(this)">Remove</button>
+      <button class="btn btn-primary" style="flex:1;background:var(--red);border-color:var(--red)" onclick="(function(){
+        var entry=interests.find(function(x){return x.id==='${iid}';});
+        if(entry&&entry.followUp&&typeof AndroidNotify!=='undefined'){
+          var idHash=Math.abs(('int_'+entry.id).split('').reduce(function(a,c){return(a<<5)-a+c.charCodeAt(0)|0;},0));
+          try{AndroidNotify.cancelNotification(idHash);}catch(e){}
+          try{AndroidNotify.cancelNotification(idHash+50000);}catch(e){}
+          console.log('[DPP] removeInterest: cancelled notification id='+idHash+' for '+entry.domain);
+        }
+        interests=interests.filter(function(x){return x.id!=='${iid}';});
+        save();renderInterests();toast('Removed','success');this.closest('[style*=fixed]').remove();
+      }).call(this)">Remove</button>
       <button class="btn" style="flex:1" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
     </div>
   </div>`;
@@ -3549,7 +3757,12 @@ function toggleDomainRow(rowEl){
   renderDomainsAsList(list);
 }
 
-try{setTimeout(function(){debouncedScheduleAndroid();},2000);}catch(e){}
+// On startup after 2s: cancel all stale notifications and rebuild from isDomainDueToday().
+// The delay lets the Android bridge fully initialise before we call it.
+try{setTimeout(function(){
+  console.log('[DPP] Startup: running cancelAllAndRebuild after 2s delay');
+  cancelAllAndRebuild();
+},2000);}catch(e){}
 // ── EDITABLE PROFILE NAME ─────────────────────────────────────────────────────
 function editProfile(){
   const current = localStorage.getItem('dpp_profile_name')||'Domain Investor';
@@ -3760,32 +3973,71 @@ function _userTz() {
   return localStorage.getItem('dpp_user_tz') || 'Africa/Lagos';
 }
 
-// scheduleAndroidReminders: rebuilt to use isDomainDueToday() as single source of truth.
-// Price-drop follow-up sequence removed — price history is still recorded.
+// ── CANCEL ALL + REBUILD ────────────────────────────────────────────────────
+// The single entry point for all Android notification rebuilds.
+// Step 1: cancelAllNotifications() — wipes every pending alarm including stale ones
+// Step 2: scheduleAndroidReminders() — rebuilds from isDomainDueToday() only
+// Step 3: restoreSnoozedNotifications() — re-adds any live snoozed alarms
+// This is called by: startup (2s deferred), debouncedScheduleAndroid (all data changes)
+function cancelAllAndRebuild() {
+  if (typeof AndroidNotify === 'undefined') {
+    console.log('[DPP] cancelAllAndRebuild: AndroidNotify not available (browser mode), skipping');
+    return;
+  }
+  try {
+    AndroidNotify.cancelAllNotifications();
+    console.log('[DPP] cancelAllAndRebuild: all stale notifications cleared');
+  } catch(e) {
+    console.warn('[DPP] cancelAllAndRebuild: cancelAllNotifications not available:', e.message);
+  }
+  try {
+    scheduleAndroidReminders();
+  } catch(e) {
+    console.error('[DPP] cancelAllAndRebuild: scheduleAndroidReminders failed:', e);
+  }
+  // Restore snoozed notifications AFTER the main rebuild so they are not wiped by cancelAll
+  try {
+    restoreSnoozedNotifications();
+  } catch(e) {
+    console.error('[DPP] cancelAllAndRebuild: restoreSnoozedNotifications failed:', e);
+  }
+}
+
+// scheduleAndroidReminders: uses isDomainDueToday() as the ONLY condition.
+// A notification fires if and only if isDomainDueToday() returns that item —
+// the same function used by the "Due Today" UI. They are always in sync.
+// Price-drop removed. No other hidden trigger paths exist.
 window.scheduleAndroidReminders = function() {
   try {
     var items = [];
     var now = Date.now();
     var userTz = _userTz();
+    var scheduledCount = 0;
 
     domains.forEach(function(d) {
       if (d.sold) return;
       var tz = d.locTz || 'America/New_York';
 
-      // Use isDomainDueToday() — single source of truth for what is due.
-      isDomainDueToday(d).forEach(function(item) {
+      // isDomainDueToday() is the SINGLE gate. If it's not in this list,
+      // it will NOT get a notification. No other code path schedules domain notifications.
+      var dueItems = isDomainDueToday(d);
+
+      if (dueItems.length) {
+        console.log('[DPP] scheduleAndroidReminders: ' + d.domain + ' has ' + dueItems.length + ' item(s) due today:');
+      }
+
+      dueItems.forEach(function(item) {
         try {
           var isoDate = toVal(item.dt);
           var triggerMs = _tzTargetMs(isoDate, tz, 8, 0);
-          if (triggerMs <= now) return;
+          if (triggerMs <= now) {
+            console.log('[DPP]   SKIPPED (already past): ' + item.label + ' @ ' + isoDate);
+            return;
+          }
 
           var idHash = Math.abs((d.domain + item.label + isoDate).split('').reduce(function(a, c) {
             return (a << 5) - a + c.charCodeAt(0) | 0;
           }, 0));
-
-          // Cancel any stale notification for this slot before scheduling
-          try { AndroidNotify.cancelNotification(idHash); } catch(e) {}
-          try { AndroidNotify.cancelNotification(idHash + 50000); } catch(e) {}
 
           // 6am user-local pre-notification (advance warning in your timezone)
           var watPreMs = _tzTargetMs(isoDate, userTz, 6, 0);
@@ -3797,6 +4049,7 @@ window.scheduleAndroidReminders = function() {
                     (d.locName || tz) + ' time. Prepare now!',
               triggerMs: watPreMs
             });
+            console.log('[DPP]   SCHEDULED pre-alert: ' + item.label + ' id=' + (idHash + 50000));
           }
 
           // Main notification at 8am in the contact's timezone
@@ -3806,14 +4059,17 @@ window.scheduleAndroidReminders = function() {
             body: item.label + ' for ' + d.domain + ' (' + (d.locName || tz) + ')',
             triggerMs: triggerMs
           });
-        } catch(e) {}
+          console.log('[DPP]   SCHEDULED: ' + item.label + ' @ 8am ' + tz + ' id=' + idHash + ' triggerMs=' + triggerMs);
+          scheduledCount++;
+        } catch(e) { console.error('[DPP]   ERROR scheduling item:', e); }
       });
     });
 
-    // Interest follow-ups (unchanged — not affected by price-drop issue)
+    // Interest follow-ups
     interests.forEach(function(it) {
       if (!it.followUp || it.followUpDone) return;
       var fuDt = pd(it.followUp); if (!fuDt) return;
+      if (!isToday(fuDt)) return;
       try {
         var itTz = it.tz || userTz;
         var triggerMs = _tzTargetMs(it.followUp, itTz, 8, 0);
@@ -3832,20 +4088,23 @@ window.scheduleAndroidReminders = function() {
             triggerMs: watPreMs
           });
         }
-
         items.push({
           id: idHash,
           title: 'Interest follow-up: ' + it.domain,
           body: 'Follow-up with ' + it.email + ' for ' + it.domain,
           triggerMs: triggerMs
         });
+        console.log('[DPP] SCHEDULED interest FU: ' + it.domain + ' id=' + idHash);
+        scheduledCount++;
       } catch(e) {}
     });
+
+    console.log('[DPP] scheduleAndroidReminders complete: ' + scheduledCount + ' notification(s) scheduled, ' + items.length + ' total alarm(s) registered');
 
     if (typeof AndroidNotify !== 'undefined') {
       AndroidNotify.scheduleReminders(JSON.stringify(items));
     }
-  } catch(e) { console.error('scheduleAndroidReminders failed:', e); }
+  } catch(e) { console.error('[DPP] scheduleAndroidReminders failed:', e); }
 };
 
 // window.onAndroidBack is assigned to handleBackButton above (line ~3047)
@@ -3854,20 +4113,27 @@ window.scheduleAndroidReminders = function() {
 // Named alias so existing call sites using scheduleAndroidReminders() bare name still work
 var scheduleAndroidReminders = window.scheduleAndroidReminders;
 
-// Debounced scheduleAndroidReminders so bulk adds don't spam it
+// debouncedScheduleAndroid: the ONLY entry point called by data-change triggers.
+// It always calls cancelAllAndRebuild() — never scheduleAndroidReminders() directly —
+// so stale alarms are always cleared before rebuilding from isDomainDueToday().
+// 600ms debounce absorbs rapid sequential changes (bulk import, etc).
 var _sarTimer = null;
 function debouncedScheduleAndroid() {
   clearTimeout(_sarTimer);
   _sarTimer = setTimeout(function() {
-    try { scheduleAndroidReminders(); } catch(e) {}
+    console.log('[DPP] debouncedScheduleAndroid fired -> cancelAllAndRebuild');
+    try { cancelAllAndRebuild(); } catch(e) {
+      console.error('[DPP] debouncedScheduleAndroid: failed:', e);
+    }
   }, 600);
 }
 
 try{load();}catch(e){console.error('load() failed:',e);}
 try{renderDash();}catch(e){console.error('renderDash() failed:',e);}
 try{scheduleAll();}catch(e){console.error('scheduleAll() failed:',e);}
-// On startup: restore any snoozed notifications from persistent storage
-try{restoreSnoozedNotifications();}catch(e){console.error('restoreSnoozedNotifications failed:',e);}
+// NOTE: cancelAllAndRebuild() is NOT called here immediately — the Android bridge
+// (AndroidNotify) is not yet available at synchronous parse time. The deferred
+// 2-second call below is the correct startup entry point for Android notifications.
 try{initDrawerSections();}catch(e){console.error('initDrawerSections() failed:',e);}
 try{renderDrawerMenu();}catch(e){console.error('renderDrawerMenu() failed:',e);}
 try{(function(){var t=localStorage.getItem("dpp_theme");if(t==="dark"){document.documentElement.setAttribute("data-theme","dark");var el=document.getElementById("theme-toggle");if(el)el.classList.add("on");}var tz=localStorage.getItem("dpp_user_tz")||"Africa/Lagos";var el2=document.getElementById("dr-tz");if(el2)el2.textContent=tz.split("/")[1]||tz;})();}catch(e){console.error('theme init failed:',e);}
