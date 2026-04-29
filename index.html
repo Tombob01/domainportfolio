@@ -3852,7 +3852,29 @@ try{(function(){
       ';font-size:13px;font-family:inherit;cursor:pointer;text-align:left;'+
       'min-height:38px;-webkit-appearance:none;outline:none;box-sizing:border-box;';
     btn.textContent=inp.value?fmtDisplay(inp.value):(inp.getAttribute('placeholder')||'Select date');
+    btn.style.paddingRight='30px'; // leave room for clear button
+    // Clear button — only visible when a date is set
+    var clearBtn=document.createElement('button');
+    clearBtn.type='button';
+    clearBtn.textContent='✕';
+    clearBtn.title='Clear date';
+    clearBtn.style.cssText='position:absolute;right:6px;top:50%;transform:translateY(-50%);'+
+      'background:none;border:none;color:var(--text3);font-size:15px;cursor:pointer;'+
+      'padding:4px 6px;line-height:1;display:'+(inp.value?'block':'none')+';z-index:2;';
+    clearBtn.addEventListener('click',function(e){
+      e.stopPropagation();
+      inp.value='';
+      var ev=new Event('change',{bubbles:true});
+      inp.dispatchEvent(ev);
+    });
+    clearBtn.addEventListener('touchend',function(e){
+      e.preventDefault();e.stopPropagation();
+      inp.value='';
+      var ev=new Event('change',{bubbles:true});
+      inp.dispatchEvent(ev);
+    });
     wrap.appendChild(btn);
+    wrap.appendChild(clearBtn);
     function openPicker(){
       if(typeof AndroidDatePicker!=='undefined'){
         AndroidDatePicker.open(inp.getAttribute('data-dpid')||inp.id||'', inp.value||'');
@@ -3880,6 +3902,7 @@ try{(function(){
     function _syncBtn(){
       btn.textContent=inp.value?fmtDisplay(inp.value):(inp.getAttribute('placeholder')||'Select date');
       btn.style.color=inp.value?'var(--text)':'var(--text3)';
+      clearBtn.style.display=inp.value?'block':'none';
     }
     function _invokeAttrHandler(attrName){
       var handler=inp.getAttribute(attrName);
