@@ -620,7 +620,7 @@ code{font-family:'SFMono-Regular',Consolas,monospace;background:var(--bg2);paddi
     <span id="domains-back-label" style="font-size:12px;color:var(--text3);margin-left:10px"></span>
   </div>
   <div class="search-row">
-    <input type="text" id="s-q" placeholder="Search domains…" oninput="renderDomains()">
+    <input type="text" id="s-q" placeholder="Search domains…" oninput="_debouncedSearch()">
     <select id="s-status" onchange="renderDomains()">
       <option value="">All statuses</option><option>Active</option><option>Pending Reply</option><option>No Response</option><option>Sold</option><option>Not Contacted</option><option>Expired</option>
     </select>
@@ -893,6 +893,13 @@ function load(){
 }
 
 function save(){
+  // Proactive emailLog cap: trim each domain to the 100 most recent entries
+  // BEFORE serialising, so neither localStorage nor SharedPreferences ever
+  // stores more than 100 entries. This is separate from the emergency-10 trim
+  // below which only fires on QuotaExceededError.
+  domains.forEach(function(d){
+    if(d.emailLog&&d.emailLog.length>100) d.emailLog=d.emailLog.slice(-100);
+  });
   var domainsJson    = JSON.stringify(domains);
   var emailsJson     = JSON.stringify(emailAccounts);
   var interestsJson  = JSON.stringify(interests);
@@ -1767,6 +1774,7 @@ function addEmailLog(id){
   selectedEmails.forEach(email=>{
     const count=countInputs[email];
     d.emailLog.push({email,count,note,date:dateStr,followUp:fuDate});
+    if(d.emailLog.length>100) d.emailLog=d.emailLog.slice(-100); // cap at 100
     const acc=emailAccounts.find(a=>a.email===email);if(acc)acc.count+=count;
     totalLogged+=count;
   });
@@ -1957,7 +1965,7 @@ function delDomain(id){
     <div style="font-size:15px;font-weight:800;margin-bottom:8px;color:var(--text)">Remove domain?</div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:18px">${d.domain}</div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-primary" style="flex:1;background:var(--red);border-color:var(--red)" onclick="(function(){domains=domains.filter(x=>x.id!='${id}');save();renderDomains();renderDash();toast('Domain removed','success');this.closest('[style*=fixed]').remove();}).call(this)">Remove</button>
+      <button class="btn btn-primary" style="flex:1;background:var(--red);border-color:var(--red)" onclick="(function(){var _dn=domains.find(x=>x.id=='${id}')&&domains.find(x=>x.id=='${id}').domain;domains=domains.filter(x=>x.id!='${id}');if(_dn)interests=interests.filter(x=>x.domain!==_dn);save();renderDomains();renderDash();toast('Domain removed','success');this.closest('[style*=fixed]').remove();}).call(this)">Remove</button>
       <button class="btn" style="flex:1" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
     </div>
   </div>`;
@@ -1987,6 +1995,16 @@ function navToDomainsFiltered(type, value){
 }
 
 // ── RENDER DOMAINS ────────────────────────────────────────────────────────────
+// ── SEARCH DEBOUNCE ─────────────────────────────────────────────────────────
+// 250ms debounce on the search input — prevents a full DOM rebuild on every
+// keystroke. All other filters (dropdowns) call renderDomains() directly
+// because they fire once per change, not on every character typed.
+var _searchTimer=null;
+function _debouncedSearch(){
+  clearTimeout(_searchTimer);
+  _searchTimer=setTimeout(renderDomains,250);
+}
+
 function renderDomains(){
   const q=(document.getElementById('s-q').value||'').toLowerCase();
   const fs=document.getElementById('s-status').value;
@@ -3668,11 +3686,16 @@ window.onAndroidBack=handleBackButton;
 // ── COMPACT LIST VIEW for My Domains ──
 var _expandedDomain = null;
 
-function renderDomainsAsList(list){
-  var el = document.getElementById('domain-list');
-  if(!list.length){ el.innerHTML='<div class="empty">No domains found</div>'; return; }
-  var html='<div class="dlist-container">';
-  list.forEach(function(d){
+// ── PAGINATION STATE ─────────────────────────────────────────────────────────
+// _pagedList holds the full filtered list so loadMoreDomains() can append the
+// next batch without re-running the filter. Reset to [] on every new renderDomains call.
+var _pagedList=[];
+var _pagedOffset=0;
+var _PAGE_SIZE=50;
+
+function _buildDomainRowsHtml(slice){
+  var html='';
+  slice.forEach(function(d){
     var expDt=pd(d.expiry), expDays=daysUntil(expDt);
     var isExpired=expDays!==null&&expDays<0&&!d.sold;
     var statusColor=d.sold?'var(--teal)':isExpired?'var(--red)':expDays!==null&&expDays<=7?'var(--red)':expDays!==null&&expDays<=30?'var(--amber)':'var(--green)';
@@ -3701,8 +3724,49 @@ function renderDomainsAsList(list){
     if(isExp) html+=renderCard(d);
     html+='</div>';
   });
-  html+='</div>';
+  return html;
+}
+
+function _loadMoreBtn(shown,total){
+  var rem=total-shown;
+  return '<button onclick="loadMoreDomains()" style="width:100%;padding:12px;margin-top:8px;'
+    +'border:1.5px dashed var(--border2);border-radius:var(--r);background:var(--bg);'
+    +'color:var(--text2);font-size:13px;cursor:pointer;">Load more ('
+    +rem+' remaining)</button>';
+}
+
+function renderDomainsAsList(list){
+  var el = document.getElementById('domain-list');
+  if(!list.length){ el.innerHTML='<div class="empty">No domains found</div>'; return; }
+  // Store full list for pagination; reset offset
+  _pagedList=list;
+  _pagedOffset=0;
+  var first=list.slice(0,_PAGE_SIZE);
+  _pagedOffset=first.length;
+  var html='<div class="dlist-container" id="dlist-inner">'+_buildDomainRowsHtml(first)+'</div>';
+  if(list.length>_PAGE_SIZE) html+=_loadMoreBtn(_pagedOffset,list.length);
   el.innerHTML=html;
+}
+
+// Appends the next page of rows WITHOUT rebuilding the already-rendered rows.
+// Called by the Load More button — all existing click handlers remain intact.
+function loadMoreDomains(){
+  var container=document.getElementById('dlist-inner');
+  if(!container||_pagedOffset>=_pagedList.length) return;
+  var next=_pagedList.slice(_pagedOffset,_pagedOffset+_PAGE_SIZE);
+  _pagedOffset+=next.length;
+  // Append new rows before the Load More button
+  var tmp=document.createElement('div');
+  tmp.innerHTML=_buildDomainRowsHtml(next);
+  while(tmp.firstChild) container.appendChild(tmp.firstChild);
+  // Remove Load More button and re-add if more remain
+  var btn=document.getElementById('domain-list').querySelector('button');
+  if(btn) btn.remove();
+  if(_pagedOffset<_pagedList.length){
+    var btnEl=document.createElement('div');
+    btnEl.innerHTML=_loadMoreBtn(_pagedOffset,_pagedList.length);
+    document.getElementById('domain-list').appendChild(btnEl.firstChild);
+  }
 }
 
 function toggleDomainRow(rowEl){
@@ -3718,40 +3782,40 @@ function toggleDomainRow(rowEl){
   } else {
     _expandedDomain=actualDomain;
   }
-  var q=(document.getElementById('s-q').value||'').toLowerCase();
-  var fs=document.getElementById('s-status').value;
-  var fp=document.getElementById('s-phase').value;
-  var fi=document.getElementById('s-interest').value;
-  var fo=document.getElementById('s-overdue').value;
-  var fc=document.getElementById('s-cat')?document.getElementById('s-cat').value:'';
-  var list=domains.filter(function(d){
-    if(q&&!d.domain.toLowerCase().includes(q)) return false;
-    if(fs){
-      var expDt=pd(d.expiry);
-      var s=d.sold?'Sold':(expDt&&daysUntil(expDt)<0&&!d.sold)?'Expired':d.status;
-      if(s!==fs) return false;
+  // FIX: instead of calling renderDomainsAsList() (which resets pagination to
+  // page 1), patch only the two affected rows in-place so the user's scroll
+  // position and loaded pages are preserved.
+  // Find the row that was just clicked and its detail panel.
+  var detEl=document.getElementById('ddet-'+safeId);
+  if(!detEl) return;
+  var allRows=document.querySelectorAll('.dlist-row');
+  // Collapse every currently-open row first (mirrors the old full-rebuild behaviour)
+  allRows.forEach(function(r){
+    var rid=r.getAttribute('data-domain');
+    var det=document.getElementById('ddet-'+rid);
+    var arr=r.querySelector('.dlist-arr');
+    if(rid!==safeId){
+      if(det){det.classList.remove('open');det.innerHTML='';}
+      if(arr) arr.style.transform='';
+      r.classList.remove('expanded');
     }
-    if(fp){
-      var p1=getP1(d),p2=getP2(d),p3=getP3(d);
-      if(fp==='1'&&!p1.email) return false;
-      if(fp==='2'&&!p2.email) return false;
-      if(fp==='3'&&!p3.email) return false;
-    }
-    if(fi){
-      var hasInt=interests.some(function(i){return i.domain===d.domain;});
-      if(fi==='yes'&&!hasInt) return false;
-      if(fi==='no'&&hasInt) return false;
-    }
-    if(fo==='overdue'){
-      var p1=getP1(d),p2=getP2(d),p3=getP3(d),pdd=getPD(d);
-      var hasOv=[p1.fu1,p1.fu2,p1.fu3,p2.email,p2.fu1,p2.fu2,p2.fu3,p3.email,p3.fu1,p3.fu2,p3.fu3].some(function(dt){return dt&&isPast(dt)&&!isToday(dt);});
-      var hasIntOv=interests.some(function(i){return i.domain===d.domain&&!i.followUpDone&&i.followUp&&daysUntil(pd(i.followUp))<0;});
-      if(!hasOv&&!hasIntOv) return false;
-    }
-    if(fc&&(d.category||'')!==fc) return false;
-    return true;
   });
-  renderDomainsAsList(list);
+  // Toggle the clicked row
+  var arr=rowEl.querySelector('.dlist-arr');
+  if(_expandedDomain===null){
+    // Was just collapsed
+    detEl.classList.remove('open');
+    detEl.innerHTML='';
+    if(arr) arr.style.transform='';
+    rowEl.classList.remove('expanded');
+  } else {
+    // Was just expanded — render card content into the detail panel
+    var domObj=domains.find(function(x){return x.domain===actualDomain;});
+    if(domObj) detEl.innerHTML=renderCard(domObj);
+    detEl.classList.add('open');
+    if(arr) arr.style.transform='rotate(180deg)';
+    rowEl.classList.add('expanded');
+  }
 }
 
 // On startup after 2s: cancel all stale notifications and rebuild from isDomainDueToday().
