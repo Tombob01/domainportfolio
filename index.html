@@ -342,6 +342,37 @@ code{font-family:'SFMono-Regular',Consolas,monospace;background:var(--bg2);paddi
 .menu-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px}
 .menu-modal-box{background:var(--bg);border-radius:var(--r);padding:24px;width:100%;max-width:340px;box-shadow:var(--shadow-md)}
 .menu-modal-box h3{font-size:15px;font-weight:800;margin-bottom:16px;color:var(--text)}
+
+/* ── DUE TOMORROW PILL ── */
+#due-tomorrow-pill{
+  display:none;
+  align-items:center;gap:7px;
+  background:var(--blue-lt);
+  border:1.5px solid #bfdbfe;
+  border-radius:20px;
+  padding:7px 14px 7px 11px;
+  font-size:12px;font-weight:700;
+  color:var(--blue-tx);
+  cursor:pointer;
+  user-select:none;
+  margin-bottom:14px;
+  width:fit-content;
+  box-shadow:var(--shadow-sm);
+  transition:background .15s,box-shadow .15s;
+  animation:pill-pulse-once .6s ease-out 0.3s both;
+}
+#due-tomorrow-pill:hover{background:#dbeafe;box-shadow:var(--shadow)}
+#due-tomorrow-pill .pill-icon{font-size:14px;line-height:1}
+#due-tomorrow-pill .pill-dismiss{
+  margin-left:4px;opacity:.5;font-size:13px;line-height:1;
+  padding:0 2px;border-radius:50%;transition:opacity .15s,background .15s;
+}
+#due-tomorrow-pill .pill-dismiss:hover{opacity:1;background:rgba(37,99,235,.12)}
+@keyframes pill-pulse-once{
+  0%{transform:scale(1);box-shadow:0 0 0 0 rgba(37,99,235,.35)}
+  40%{transform:scale(1.04);box-shadow:0 0 0 7px rgba(37,99,235,0)}
+  100%{transform:scale(1);box-shadow:var(--shadow-sm)}
+}
 </style>
 </head>
 <body>
@@ -505,6 +536,12 @@ code{font-family:'SFMono-Regular',Consolas,monospace;background:var(--bg2);paddi
   <div id="insights-wrap"></div>
   <div id="expired-section"></div>
   <div id="alerts-wrap"></div>
+  <!-- DUE TOMORROW PILL — lightweight indicator, isolated from Due Today logic -->
+  <div id="due-tomorrow-pill" role="button" aria-label="Due tomorrow — click to view in Reminders" onclick="goToTomorrowReminders()">
+    <span class="pill-icon">📅</span>
+    <span id="due-tomorrow-pill-text">Due Tomorrow: 0</span>
+    <span class="pill-dismiss" title="Dismiss for today" onclick="(function(e){e.stopPropagation();dismissTomorrowPill();})()">✕</span>
+  </div>
   <div class="sect">Due today</div>
   <div id="due-today"></div>
   <div class="sect">Recent domains</div>
@@ -708,7 +745,7 @@ code{font-family:'SFMono-Regular',Consolas,monospace;background:var(--bg2);paddi
   <div id="rem-overdue-banner"></div>
   <div id="rem-overdue-list"></div>
   <div id="rem-today-wrap" style="display:none"><div class="sect">Due today</div><div id="rem-today-list"></div></div>
-  <div id="rem-upcoming-wrap" style="display:none"><div class="sect">Upcoming</div><div id="rem-upcoming-list"></div></div>
+  <div id="rem-upcoming-wrap" style="display:none"><div class="sect" style="justify-content:space-between"><span>Upcoming</span><button id="rem-upcoming-toggle" onclick="window._reminderTomorrowFilter=true;renderReminders()" style="font-size:11px;font-weight:700;padding:3px 11px;border:1.5px solid #bfdbfe;border-radius:20px;background:var(--blue-lt);color:var(--blue-tx);cursor:pointer;font-family:inherit;display:none">Tomorrow only</button></div><div id="rem-upcoming-list"></div></div>
   <div id="rem-list"></div>
 </div>
 
@@ -2140,6 +2177,23 @@ function renderDash(){
   // Sidebar reminder dot
   document.getElementById('chip-exp').textContent=`${expiredList.length} expired`;
 
+  // ── Due Tomorrow pill (isolated — does NOT affect Due Today or Upcoming) ──
+  (function() {
+    var pill = document.getElementById('due-tomorrow-pill');
+    if (!pill) return;
+    // Check if dismissed today
+    var dismissed = false;
+    try { dismissed = localStorage.getItem('dpp_tm_pill_dismissed') === toVal(today()); } catch(e) {}
+    if (dismissed) { pill.style.display = 'none'; return; }
+    var count = getDueTomorrowCount(domains);
+    if (count > 0) {
+      document.getElementById('due-tomorrow-pill-text').textContent = 'Due Tomorrow: ' + count;
+      pill.style.display = 'inline-flex';
+    } else {
+      pill.style.display = 'none';
+    }
+  })();
+
   document.getElementById('due-today').innerHTML=due.length
     ?due.map(r=>`<div class="alert al-warn" style="margin-bottom:6px"><b style="cursor:pointer;text-decoration:underline;text-underline-offset:2px" onclick="openDomainQuickView('${r.id}')">${r.domain}</b><div style="font-size:12px;margin-top:2px">${r.label}</div><div style="font-size:11px;margin-top:2px;opacity:.8">Notify at 8am · ${r.locName}</div></div>`).join('')
     :'<div style="font-size:13px;color:var(--text3);padding:6px 0">No follow-ups due today</div>';
@@ -2427,6 +2481,59 @@ function removeEmailAccount(i){
   document.body.appendChild(modal);
 }
 
+// ── DUE TOMORROW INDICATOR ────────────────────────────────────────────────────
+// Completely isolated from Due Today and Upcoming logic.
+// getDueTomorrowCount: uses daysUntil()===1 — identical rounding to renderReminders().
+// Guarantees pill count matches exactly what the Upcoming section shows as "Tomorrow".
+function getDueTomorrowCount(domainList) {
+  var count = 0;
+  domainList.forEach(function(d) {
+    if (!d || d.sold) return;
+    var p1 = getP1(d), p2 = getP2(d), p3 = getP3(d);
+    var expDt = pd(d.expiry);
+    var candidates = [
+      [p1.email,d.p1.email],[p1.fu1,d.p1.fu1],[p1.fu2,d.p1.fu2],[p1.fu3,d.p1.fu3],
+      [p2.warn,false],[p2.email,d.p2.email],[p2.fu1,d.p2.fu1],[p2.fu2,d.p2.fu2],[p2.fu3,d.p2.fu3],
+      [p3.warn30,false],[p3.warn7,false],[expDt,false],
+      [p3.email,d.p3.email],[p3.fu1,d.p3.fu1],[p3.fu2,d.p3.fu2],[p3.fu3,d.p3.fu3]
+    ];
+    candidates.forEach(function(row) {
+      var dt = row[0], done = row[1];
+      if (!dt || done) return;
+      if (daysUntil(dt) === 1) count++;
+    });
+  });
+  interests.forEach(function(it) {
+    if (!it.followUp || it.followUpDone) return;
+    var fuDt = pd(it.followUp); if (!fuDt) return;
+    if (daysUntil(fuDt) === 1) count++;
+  });
+  return count;
+}
+
+// Temporary flag: set before navigating to Reminders, consumed and cleared
+// inside renderReminders() so it never persists beyond one render cycle.
+// Does NOT touch the existing "Upcoming" filter or any other reminder state.
+var _reminderTomorrowFilter = false;
+
+// Navigate to Reminders tab and apply a temporary "tomorrow-only" view.
+// The filter is consumed on the next renderReminders() call and then cleared.
+function goToTomorrowReminders() {
+  _reminderTomorrowFilter = true;
+  var remBtn = null;
+  document.querySelectorAll('.nb').forEach(function(b) {
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').indexOf("'reminders'") > -1) remBtn = b;
+  });
+  navPage('reminders', remBtn);
+}
+
+// Dismiss the pill for today (stored in localStorage with today's date key).
+function dismissTomorrowPill() {
+  try { localStorage.setItem('dpp_tm_pill_dismissed', toVal(today())); } catch(e) {}
+  var pill = document.getElementById('due-tomorrow-pill');
+  if (pill) pill.style.display = 'none';
+}
+
 // ── REMINDERS ─────────────────────────────────────────────────────────────────
 // renderReminders: uses isDomainDueToday() as single source of truth.
 // This guarantees the Reminders page shows EXACTLY what triggers notifications —
@@ -2480,15 +2587,38 @@ function renderReminders(){
   });
   allItems.sort((a,b)=>a.dt-b.dt);
 
+  // ── Due Tomorrow temporary filter ──────────────────────────────────────────
+  // Consumed HERE and immediately cleared — does NOT modify allItems, overdue,
+  // dueToday, or the existing "upcoming" variable. Zero persistent state change.
+  var _showTomorrowOnly = _reminderTomorrowFilter;
+  _reminderTomorrowFilter = false; // clear immediately — one-shot, non-persistent
+
   const overdue=allItems.filter(r=>r.days<0);
   const dueToday=allItems.filter(r=>r.days===0);
+  // "upcoming" is unchanged — existing Upcoming logic is NOT modified
   const upcoming=allItems.filter(r=>r.days>0);
 
-  // Overdue banner
+  // ── Overdue banner + collapsible list ───────────────────────────────────────
+  // Collapsed by default when overdue > 0 to prevent page crowding.
+  // State stored in a module var so toggling survives the same render session.
+  // Does NOT touch Due Today, Upcoming, or any notification logic.
   const bannerEl=document.getElementById('rem-overdue-banner');
-  bannerEl.innerHTML=overdue.length
-    ?`<div class="alert al-danger" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span><b>${overdue.length} overdue reminder${overdue.length>1?'s':''}</b> — action needed</span></div>`
-    :'';
+  const ovEl=document.getElementById('rem-overdue-list');
+
+  if(!overdue.length){
+    bannerEl.innerHTML='';
+    ovEl.innerHTML='';
+  } else {
+    // Read current expanded state (default: collapsed)
+    var _ovExpanded = window._overdueExpanded === true;
+    bannerEl.innerHTML=`<div class="alert al-danger" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;cursor:pointer" onclick="window._overdueExpanded=!window._overdueExpanded;renderReminders()">
+      <span><b>${overdue.length} overdue reminder${overdue.length>1?'s':''}</b> — action needed</span>
+      <span style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;background:rgba(220,38,38,.12);color:var(--red);border:1.5px solid #fecaca;white-space:nowrap;flex-shrink:0">
+        ${_ovExpanded?'Hide ▴':'Show ▾'}
+      </span>
+    </div>`;
+    ovEl.innerHTML = _ovExpanded ? overdue.map(remRowHTML).join('') : '';
+  }
 
   function remRowHTML(r){
     const isOv=r.days<0;
@@ -2508,21 +2638,48 @@ function renderReminders(){
     return`<div class="alert ${cls}" style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap"><div style="min-width:0;flex:1"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px"><b>${r.domain}</b>${statusBadge}</div><div style="font-size:12px;margin-top:3px">${r.label} — ${fullWhen} (${fmt(r.dt)})${r.isInterest?`<span style="font-size:10px;opacity:.7"> · Interest FU</span>`:''}</div>${r.tz?`<div style="font-size:10px;color:var(--text3);margin-top:2px">🕗 8am · ${r.loc} (${r.tz.replace('America/','').replace(/_/g,' ')})</div>`:''}</div><div style="display:flex;gap:5px;align-items:center;flex-shrink:0">${calBtn}${r.isInterest?`<button class="btn btn-sm" style="font-size:11px;padding:4px 10px" onclick="markFUDone('${r.iid}');renderReminders()">Done</button>`:''}</div></div></div>`;
   }
 
-  // Overdue section
-  const ovEl=document.getElementById('rem-overdue-list');
-  ovEl.innerHTML=overdue.length?overdue.map(remRowHTML).join(''):'';
-
   // Due today section
   const todayWrap=document.getElementById('rem-today-wrap');
   const todayEl=document.getElementById('rem-today-list');
   if(dueToday.length){todayWrap.style.display='block';todayEl.innerHTML=dueToday.map(remRowHTML).join('');}
   else todayWrap.style.display='none';
 
-  // Upcoming section
+  // Upcoming section — _showTomorrowOnly applies a temporary tomorrow-only view.
+  // The toggle button in the Upcoming header also sets _reminderTomorrowFilter to re-render.
+  // When active: shows only days===1 items + "Show all" button.
+  // When inactive: normal full upcoming list. No state mutation.
   const upWrap=document.getElementById('rem-upcoming-wrap');
   const upEl=document.getElementById('rem-upcoming-list');
-  if(upcoming.length){upWrap.style.display='block';upEl.innerHTML=upcoming.map(remRowHTML).join('');}
-  else upWrap.style.display='none';
+  const upToggleBtn=document.getElementById('rem-upcoming-toggle');
+  var tomorrowItems=upcoming.filter(function(r){return r.days===1;});
+
+  if(upcoming.length){
+    upWrap.style.display='block';
+    // Show toggle button only if there are tomorrow items in the upcoming list
+    if(upToggleBtn){
+      if(tomorrowItems.length){
+        upToggleBtn.style.display='inline-block';
+        upToggleBtn.textContent=_showTomorrowOnly?'Show all':'Tomorrow only';
+        upToggleBtn.onclick=_showTomorrowOnly
+          ? function(){renderReminders();}
+          : function(){window._reminderTomorrowFilter=true;renderReminders();};
+      } else {
+        upToggleBtn.style.display='none';
+      }
+    }
+    if(_showTomorrowOnly){
+      if(tomorrowItems.length){
+        upEl.innerHTML=tomorrowItems.map(remRowHTML).join('');
+      } else {
+        upEl.innerHTML='<div style="font-size:13px;color:var(--text3);padding:6px 0">No items due tomorrow</div>';
+      }
+    } else {
+      upEl.innerHTML=upcoming.map(remRowHTML).join('');
+    }
+  } else {
+    upWrap.style.display='none';
+    if(upToggleBtn) upToggleBtn.style.display='none';
+  }
 
   // Legacy rem-list: show empty state only if nothing at all
   document.getElementById('rem-list').innerHTML=(!overdue.length&&!dueToday.length&&!upcoming.length)
