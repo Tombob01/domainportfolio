@@ -745,7 +745,7 @@ code{font-family:'SFMono-Regular',Consolas,monospace;background:var(--bg2);paddi
   <div id="rem-overdue-banner"></div>
   <div id="rem-overdue-list"></div>
   <div id="rem-today-wrap" style="display:none"><div class="sect">Due today</div><div id="rem-today-list"></div></div>
-  <div id="rem-upcoming-wrap" style="display:none"><div class="sect" style="justify-content:space-between"><span>Upcoming</span><button id="rem-upcoming-toggle" onclick="window._reminderTomorrowFilter=true;renderReminders()" style="font-size:11px;font-weight:700;padding:3px 11px;border:1.5px solid #bfdbfe;border-radius:20px;background:var(--blue-lt);color:var(--blue-tx);cursor:pointer;font-family:inherit;display:none">Tomorrow only</button></div><div id="rem-upcoming-list"></div></div>
+  <div id="rem-upcoming-wrap" style="display:none"><div class="sect" style="justify-content:space-between"><span>Upcoming</span><span id="rem-upcoming-toggle"></span></div><div id="rem-upcoming-list"></div></div>
   <div id="rem-list"></div>
 </div>
 
@@ -2553,6 +2553,7 @@ function getDueTomorrowCount(domainList) {
 // inside renderReminders() so it never persists beyond one render cycle.
 // Does NOT touch the existing "Upcoming" filter or any other reminder state.
 var _reminderTomorrowFilter = false;
+var _tomorrowOnly = false; // persistent toggle state for Tomorrow only pill
 
 // Navigate to Reminders tab and apply a temporary "tomorrow-only" view.
 // The filter is consumed on the next renderReminders() call and then cleared.
@@ -2628,8 +2629,10 @@ function renderReminders(){
   // ── Due Tomorrow temporary filter ──────────────────────────────────────────
   // Consumed HERE and immediately cleared — does NOT modify allItems, overdue,
   // dueToday, or the existing "upcoming" variable. Zero persistent state change.
-  var _showTomorrowOnly = _reminderTomorrowFilter;
-  _reminderTomorrowFilter = false; // clear immediately — one-shot, non-persistent
+  // _tomorrowOnly = persistent pill toggle; _reminderTomorrowFilter = one-shot from dashboard pill
+  if(_reminderTomorrowFilter){ _tomorrowOnly = true; }
+  _reminderTomorrowFilter = false; // clear one-shot flag
+  var _showTomorrowOnly = _tomorrowOnly;
 
   const overdue=allItems.filter(r=>r.days<0);
   const dueToday=allItems.filter(r=>r.days===0);
@@ -2687,9 +2690,12 @@ function renderReminders(){
   if(dueToday.length){todayWrap.style.display='block';todayEl.innerHTML=dueToday.map(remRowHTML).join('');}
   else todayWrap.style.display='none';
 
-  // Upcoming section — _showTomorrowOnly applies a temporary tomorrow-only view.
-  // When active: shows only days===1 items + "Show all" button.
-  // When inactive: normal full upcoming list. No state mutation.
+  // Upcoming section
+  // Rules:
+  //  • If there ARE tomorrow items → default to Tomorrow-only view, pill shows [Tomorrow only] at front.
+  //    Filtered state: pill changes to [Show all] → tap returns to full list.
+  //  • If NO tomorrow items → always show full upcoming list, no pill shown.
+  //  • _tomorrowOnly = persistent toggle state (survives re-renders within the session).
   const upWrap=document.getElementById('rem-upcoming-wrap');
   const upEl=document.getElementById('rem-upcoming-list');
   const upToggleBtn=document.getElementById('rem-upcoming-toggle');
@@ -2697,30 +2703,29 @@ function renderReminders(){
 
   if(upcoming.length){
     upWrap.style.display='block';
-    // Show toggle button only if there are tomorrow items in the upcoming list
-    if(upToggleBtn){
-      if(tomorrowItems.length){
-        upToggleBtn.style.display='inline-block';
-        upToggleBtn.textContent=_showTomorrowOnly?'Show all':'Tomorrow only';
-        upToggleBtn.onclick=_showTomorrowOnly
-          ? function(){renderReminders();}
-          : function(){window._reminderTomorrowFilter=true;renderReminders();};
-      } else {
-        upToggleBtn.style.display='none';
-      }
-    }
-    if(_showTomorrowOnly){
-      if(tomorrowItems.length){
+
+    if(tomorrowItems.length){
+      // There are tomorrow items — enforce default tomorrow-only if not yet set
+      if(typeof window._tomorrowOnly==='undefined') window._tomorrowOnly=true;
+
+      if(_showTomorrowOnly){
+        // Filtered state: showing tomorrow only → pill says [Show all]
+        upToggleBtn.innerHTML=`<button onclick="window._tomorrowOnly=false;renderReminders()" style="font-size:11px;font-weight:700;padding:3px 11px;border:1.5px solid #bfdbfe;border-radius:20px;background:var(--blue-lt);color:var(--blue-tx);cursor:pointer;font-family:inherit">Show all</button>`;
         upEl.innerHTML=tomorrowItems.map(remRowHTML).join('');
       } else {
-        upEl.innerHTML='<div style="font-size:13px;color:var(--text3);padding:6px 0">No items due tomorrow</div>';
+        // Full list state → pill says [Tomorrow only] at the front
+        upToggleBtn.innerHTML=`<button onclick="window._tomorrowOnly=true;renderReminders()" style="font-size:11px;font-weight:700;padding:3px 11px;border:1.5px solid #bfdbfe;border-radius:20px;background:var(--blue-lt);color:var(--blue-tx);cursor:pointer;font-family:inherit">Tomorrow only</button>`;
+        upEl.innerHTML=upcoming.map(remRowHTML).join('');
       }
     } else {
+      // No tomorrow items — always show full list, no pill
+      upToggleBtn.innerHTML='';
+      window._tomorrowOnly=false;
       upEl.innerHTML=upcoming.map(remRowHTML).join('');
     }
   } else {
     upWrap.style.display='none';
-    if(upToggleBtn) upToggleBtn.style.display='none';
+    upToggleBtn.innerHTML='';
   }
 
   // Legacy rem-list: show empty state only if nothing at all
