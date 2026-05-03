@@ -2636,11 +2636,22 @@ function renderReminders(){
   // "upcoming" is unchanged — existing Upcoming logic is NOT modified
   const upcoming=allItems.filter(r=>r.days>0);
 
-  // Overdue banner
+  // Overdue banner — collapse/expand toggle
+  // State lives on window._overdueExpanded (falsy by default = collapsed).
+  // Tapping the banner pill toggles expansion. Due Today / Upcoming / Tomorrow pill untouched.
   const bannerEl=document.getElementById('rem-overdue-banner');
-  bannerEl.innerHTML=overdue.length
-    ?`<div class="alert al-danger" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span><b>${overdue.length} overdue reminder${overdue.length>1?'s':''}</b> — action needed</span></div>`
-    :'';
+  if(!overdue.length){
+    bannerEl.innerHTML='';
+  } else {
+    const isExp=!!window._overdueExpanded;
+    bannerEl.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:${isExp?'6px':'10px'}">
+      <button onclick="window._overdueExpanded=!window._overdueExpanded;renderReminders()" style="display:flex;align-items:center;gap:7px;background:var(--red-lt);border:1.5px solid #fecaca;color:var(--red-tx);border-radius:20px;padding:5px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1.2">
+        <span style="background:var(--red);color:#fff;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">${overdue.length}</span>
+        ${isExp?'Hide overdue':'Show '+overdue.length+' overdue'}
+        <span style="font-size:11px;transition:transform .2s;display:inline-block;transform:${isExp?'rotate(180deg)':'rotate(0deg)'}">▾</span>
+      </button>
+    </div>`;
+  }
 
   function remRowHTML(r){
     const isOv=r.days<0;
@@ -2660,9 +2671,15 @@ function renderReminders(){
     return`<div class="alert ${cls}" style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap"><div style="min-width:0;flex:1"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px"><b>${r.domain}</b>${statusBadge}</div><div style="font-size:12px;margin-top:3px">${r.label} — ${fullWhen} (${fmt(r.dt)})${r.isInterest?`<span style="font-size:10px;opacity:.7"> · Interest FU</span>`:''}</div>${r.tz?`<div style="font-size:10px;color:var(--text3);margin-top:2px">🕗 8am · ${r.loc} (${r.tz.replace('America/','').replace(/_/g,' ')})</div>`:''}</div><div style="display:flex;gap:5px;align-items:center;flex-shrink:0">${calBtn}${r.isInterest?`<button class="btn btn-sm" style="font-size:11px;padding:4px 10px" onclick="markFUDone('${r.iid}');renderReminders()">Done</button>`:''}</div></div></div>`;
   }
 
-  // Overdue section
+  // Overdue section — only render list when expanded
   const ovEl=document.getElementById('rem-overdue-list');
-  ovEl.innerHTML=overdue.length?overdue.map(remRowHTML).join(''):'';
+  if(!overdue.length){
+    ovEl.innerHTML='';
+  } else if(window._overdueExpanded){
+    ovEl.innerHTML=overdue.map(remRowHTML).join('');
+  } else {
+    ovEl.innerHTML='';
+  }
 
   // Due today section
   const todayWrap=document.getElementById('rem-today-wrap');
