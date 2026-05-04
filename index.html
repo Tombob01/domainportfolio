@@ -745,7 +745,7 @@ code{font-family:'SFMono-Regular',Consolas,monospace;background:var(--bg2);paddi
   <div id="rem-overdue-banner"></div>
   <div id="rem-overdue-list"></div>
   <div id="rem-today-wrap" style="display:none"><div class="sect">Due today</div><div id="rem-today-list"></div></div>
-  <div id="rem-upcoming-wrap" style="display:none"><div class="sect" style="justify-content:space-between"><span>Upcoming</span><span id="rem-upcoming-toggle"></span></div><div id="rem-upcoming-list"></div></div>
+  <div id="rem-upcoming-wrap" style="display:none"><div class="sect" style="justify-content:space-between"><span>Upcoming</span><button id="rem-upcoming-toggle" onclick="window._reminderTomorrowFilter=true;renderReminders()" style="font-size:11px;font-weight:700;padding:3px 11px;border:1.5px solid #bfdbfe;border-radius:20px;background:var(--blue-lt);color:var(--blue-tx);cursor:pointer;font-family:inherit;display:none">Tomorrow only</button></div><div id="rem-upcoming-list"></div></div>
   <div id="rem-list"></div>
 </div>
 
@@ -1290,6 +1290,42 @@ function isDomainDueToday(d) {
     if (!dt || done) return;
     if (isToday(dt)) {
       console.log('[DPP] isDomainDueToday: ' + d.domain + ' — DUE: ' + lbl + ' (' + toVal(dt) + ')');
+      due.push({dt: dt, done: done, label: lbl});
+    }
+  });
+  return due;
+}
+
+// Mirrors isDomainDueToday() but checks isTomorrow() instead.
+// Used ONLY to register tomorrow's 6am pre-alerts tonight so NightlyPrescheduleReceiver
+// can find them in SharedPreferences and register them even when the app is closed.
+function isDomainDueTomorrow(d) {
+  if (!d || d.sold) return [];
+  var p1 = getP1(d), p2 = getP2(d), p3 = getP3(d), pdd = getPD(d);
+  var expDt = pd(d.expiry);
+  var candidates = [
+    [p1.email,  d.p1.email,      'Phase 1 initial email'],
+    [p1.fu1,    d.p1.fu1,        'Phase 1 +3d FU'],
+    [p1.fu2,    d.p1.fu2,        'Phase 1 +5d FU'],
+    [p1.fu3,    d.p1.fu3,        'Phase 1 +7d FU'],
+    [p2.warn,   false,           'Phase 2 alert'],
+    [p2.email,  d.p2.email,      'Phase 2 6-month email'],
+    [p2.fu1,    d.p2.fu1,        'Phase 2 +3d FU'],
+    [p2.fu2,    d.p2.fu2,        'Phase 2 +5d FU'],
+    [p2.fu3,    d.p2.fu3,        'Phase 2 +7d FU'],
+    [p3.warn30, false,           'Expiry warning — 30 days left'],
+    [p3.warn7,  false,           'Expiry warning — 7 days left!'],
+    [expDt,     false,           'Domain expired today — renew now!'],
+    [p3.email,  d.p3.email,      'Phase 3 pre-expiry email'],
+    [p3.fu1,    d.p3.fu1,        'Phase 3 +3d FU'],
+    [p3.fu2,    d.p3.fu2,        'Phase 3 +5d FU'],
+    [p3.fu3,    d.p3.fu3,        'Phase 3 +7d FU']
+  ];
+  var due = [];
+  candidates.forEach(function(row) {
+    var dt = row[0], done = row[1], lbl = row[2];
+    if (!dt || done) return;
+    if (daysUntil(dt) === 1) {
       due.push({dt: dt, done: done, label: lbl});
     }
   });
@@ -2553,7 +2589,6 @@ function getDueTomorrowCount(domainList) {
 // inside renderReminders() so it never persists beyond one render cycle.
 // Does NOT touch the existing "Upcoming" filter or any other reminder state.
 var _reminderTomorrowFilter = false;
-var _tomorrowOnly = false; // persistent toggle state for Tomorrow only pill
 
 // Navigate to Reminders tab and apply a temporary "tomorrow-only" view.
 // The filter is consumed on the next renderReminders() call and then cleared.
@@ -2629,10 +2664,8 @@ function renderReminders(){
   // ── Due Tomorrow temporary filter ──────────────────────────────────────────
   // Consumed HERE and immediately cleared — does NOT modify allItems, overdue,
   // dueToday, or the existing "upcoming" variable. Zero persistent state change.
-  // _tomorrowOnly = persistent pill toggle; _reminderTomorrowFilter = one-shot from dashboard pill
-  if(_reminderTomorrowFilter){ _tomorrowOnly = true; }
-  _reminderTomorrowFilter = false; // clear one-shot flag
-  var _showTomorrowOnly = _tomorrowOnly;
+  var _showTomorrowOnly = _reminderTomorrowFilter;
+  _reminderTomorrowFilter = false; // clear immediately — one-shot, non-persistent
 
   const overdue=allItems.filter(r=>r.days<0);
   const dueToday=allItems.filter(r=>r.days===0);
@@ -2690,12 +2723,9 @@ function renderReminders(){
   if(dueToday.length){todayWrap.style.display='block';todayEl.innerHTML=dueToday.map(remRowHTML).join('');}
   else todayWrap.style.display='none';
 
-  // Upcoming section
-  // Rules:
-  //  • If there ARE tomorrow items → default to Tomorrow-only view, pill shows [Tomorrow only] at front.
-  //    Filtered state: pill changes to [Show all] → tap returns to full list.
-  //  • If NO tomorrow items → always show full upcoming list, no pill shown.
-  //  • _tomorrowOnly = persistent toggle state (survives re-renders within the session).
+  // Upcoming section — _showTomorrowOnly applies a temporary tomorrow-only view.
+  // When active: shows only days===1 items + "Show all" button.
+  // When inactive: normal full upcoming list. No state mutation.
   const upWrap=document.getElementById('rem-upcoming-wrap');
   const upEl=document.getElementById('rem-upcoming-list');
   const upToggleBtn=document.getElementById('rem-upcoming-toggle');
@@ -2703,29 +2733,30 @@ function renderReminders(){
 
   if(upcoming.length){
     upWrap.style.display='block';
-
-    if(tomorrowItems.length){
-      // There are tomorrow items — enforce default tomorrow-only if not yet set
-      if(typeof window._tomorrowOnly==='undefined') window._tomorrowOnly=true;
-
-      if(_showTomorrowOnly){
-        // Filtered state: showing tomorrow only → pill says [Show all]
-        upToggleBtn.innerHTML=`<button onclick="window._tomorrowOnly=false;renderReminders()" style="font-size:11px;font-weight:700;padding:3px 11px;border:1.5px solid #bfdbfe;border-radius:20px;background:var(--blue-lt);color:var(--blue-tx);cursor:pointer;font-family:inherit">Show all</button>`;
+    // Show toggle button only if there are tomorrow items in the upcoming list
+    if(upToggleBtn){
+      if(tomorrowItems.length){
+        upToggleBtn.style.display='inline-block';
+        upToggleBtn.textContent=_showTomorrowOnly?'Show all':'Tomorrow only';
+        upToggleBtn.onclick=_showTomorrowOnly
+          ? function(){renderReminders();}
+          : function(){window._reminderTomorrowFilter=true;renderReminders();};
+      } else {
+        upToggleBtn.style.display='none';
+      }
+    }
+    if(_showTomorrowOnly){
+      if(tomorrowItems.length){
         upEl.innerHTML=tomorrowItems.map(remRowHTML).join('');
       } else {
-        // Full list state → pill says [Tomorrow only] at the front
-        upToggleBtn.innerHTML=`<button onclick="window._tomorrowOnly=true;renderReminders()" style="font-size:11px;font-weight:700;padding:3px 11px;border:1.5px solid #bfdbfe;border-radius:20px;background:var(--blue-lt);color:var(--blue-tx);cursor:pointer;font-family:inherit">Tomorrow only</button>`;
-        upEl.innerHTML=upcoming.map(remRowHTML).join('');
+        upEl.innerHTML='<div style="font-size:13px;color:var(--text3);padding:6px 0">No items due tomorrow</div>';
       }
     } else {
-      // No tomorrow items — always show full list, no pill
-      upToggleBtn.innerHTML='';
-      window._tomorrowOnly=false;
       upEl.innerHTML=upcoming.map(remRowHTML).join('');
     }
   } else {
     upWrap.style.display='none';
-    upToggleBtn.innerHTML='';
+    if(upToggleBtn) upToggleBtn.style.display='none';
   }
 
   // Legacy rem-list: show empty state only if nothing at all
@@ -4400,6 +4431,60 @@ window.scheduleAndroidReminders = function() {
         });
         console.log('[DPP] SCHEDULED interest FU: ' + it.domain + ' id=' + idHash);
         scheduledCount++;
+      } catch(e) {}
+    });
+
+    // ── Tomorrow pre-alerts ─────────────────────────────────────────────────
+    // Schedule 6am WAT pre-alerts for items due TOMORROW so that they are stored
+    // in SharedPreferences tonight. NightlyPrescheduleReceiver (9pm) reads these
+    // and registers the exact alarm — so the 6am notification fires even when the
+    // app is completely closed. Without this, pre-alerts were only ever stored for
+    // TODAY's items, so they were always already-past by the time we tried to register them.
+    domains.forEach(function(d) {
+      if (d.sold) return;
+      var tz = d.locTz || 'America/New_York';
+      var tomorrowItems = isDomainDueTomorrow(d);
+      tomorrowItems.forEach(function(item) {
+        try {
+          var isoDate = toVal(item.dt);
+          var idHash = Math.abs((d.domain + item.label + isoDate).split('').reduce(function(a, c) {
+            return (a << 5) - a + c.charCodeAt(0) | 0;
+          }, 0));
+          var watPreMs = _tzTargetMs(isoDate, userTz, 6, 0);
+          // watPreMs is ~6am tomorrow WAT — always in the future at this point
+          if (watPreMs > now) {
+            items.push({
+              id: idHash + 50000,
+              title: '⏰ Tomorrow: ' + d.domain + ' — ' + item.label,
+              body: 'Your ' + item.label + ' for ' + d.domain + ' fires at 8am ' +
+                    (d.locName || tz) + ' time tomorrow. Prepare now!',
+              triggerMs: watPreMs
+            });
+            console.log('[DPP]   SCHEDULED tomorrow pre-alert: ' + item.label + ' id=' + (idHash + 50000) + ' triggerMs=' + watPreMs);
+          }
+        } catch(e) { console.error('[DPP]   ERROR scheduling tomorrow pre-alert:', e); }
+      });
+    });
+
+    // Interest follow-ups due tomorrow — pre-alerts
+    interests.forEach(function(it) {
+      if (!it.followUp || it.followUpDone) return;
+      var fuDt = pd(it.followUp); if (!fuDt) return;
+      if (daysUntil(fuDt) !== 1) return;
+      try {
+        var watPreMs = _tzTargetMs(it.followUp, userTz, 6, 0);
+        if (watPreMs > now) {
+          var idHash = Math.abs(('int_' + it.id).split('').reduce(function(a, c) {
+            return (a << 5) - a + c.charCodeAt(0) | 0;
+          }, 0));
+          items.push({
+            id: idHash + 50000,
+            title: '⏰ Tomorrow: Interest follow-up — ' + it.domain,
+            body: 'Follow-up with ' + it.email + ' for ' + it.domain + ' is due tomorrow.',
+            triggerMs: watPreMs
+          });
+          console.log('[DPP] SCHEDULED tomorrow interest pre-alert: ' + it.domain + ' id=' + (idHash + 50000));
+        }
       } catch(e) {}
     });
 
